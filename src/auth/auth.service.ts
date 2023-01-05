@@ -83,7 +83,7 @@ export class AuthService {
 
   async signToken(userId: string): Promise<{ token: string }> {
     const payload = {
-      sub: userId, //uniquw identifier for sub field
+      id: userId, //uniquw identifier for sub field
     };
     const token = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get('TOKEN_EXPIRY_TIME'),

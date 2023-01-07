@@ -28,7 +28,12 @@ export class AuthService {
     if (!user || !passwordMatch) {
       throw new ForbiddenException('Email or password not matching');
     }
-    return this.signToken(user.id);
+    const profile = await this.prisma.profile.findUnique({
+      where: {
+        userId: user.id,
+      },
+    });
+    return this.signToken(user.id, profile.username, profile.name);
   }
 
   async register(dto: RegisterDto) {
@@ -56,7 +61,7 @@ export class AuthService {
         },
       });
       // return token
-      return this.signToken(user.id);
+      return this.signToken(user.id, profile.username, profile.name);
     } catch (error) {
       // user is created but username wasnot unique
       if (userNoProfile) {
@@ -81,9 +86,15 @@ export class AuthService {
     }
   }
 
-  async signToken(userId: string): Promise<{ token: string }> {
+  async signToken(
+    userId: string,
+    username: string,
+    name: string,
+  ): Promise<{ token: string }> {
     const payload = {
       id: userId, //uniquw identifier for sub field
+      username,
+      name,
     };
     const token = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get('TOKEN_EXPIRY_TIME'),

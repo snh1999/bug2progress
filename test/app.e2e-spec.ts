@@ -155,7 +155,7 @@ describe('App e2e', () => {
         .spec()
         .get('/user/me')
         .withHeaders({
-          Authorization: 'Bearer ${}',
+          Authorization: 'Bearer $S{user_auth}',
         })
         .expectStatus(200);
     });

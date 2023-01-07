@@ -1,21 +1,18 @@
 import { Injectable, Req } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ProfileService } from './profile.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
-
+  constructor(
+    private prisma: PrismaService,
+    private profileService: ProfileService,
+  ) {}
   async getMyProfile(@Req() req: Request) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: req['user'],
-      },
-    });
-    const profile = await this.prisma.profile.findUnique({
-      where: {
-        userId: req['user'],
-      },
-    });
+    const userId = req['user'].id;
+
+    const user = await this.getUser(userId);
+    const profile = await this.profileService.getProfile(userId);
     console.log(user, profile);
     return {
       username: profile.username,
@@ -31,5 +28,14 @@ export class UserService {
       birthday: profile.birthday,
       photo: profile.photo,
     };
+  }
+
+  private async getUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    return user;
   }
 }

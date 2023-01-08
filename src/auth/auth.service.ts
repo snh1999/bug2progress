@@ -33,6 +33,7 @@ export class AuthService {
         userId: user.id,
       },
     });
+    // check if password was changed after the token was issued
     return this.signToken(user.id, profile.username, profile.name);
   }
 

@@ -1,41 +1,53 @@
-import { Injectable, Req } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from '../prisma/prisma.service';
-import { ProfileService } from './profile.service';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private prisma: PrismaService,
-    private profileService: ProfileService,
-  ) {}
-  async getMyProfile(@Req() req: Request) {
-    const userId = req['user'].id;
+  constructor(private prisma: PrismaService) {}
 
-    const user = await this.getUser(userId);
-    const profile = await this.profileService.getProfile(userId);
-    console.log(user, profile);
-    return {
-      username: profile.username,
-      id: user.id,
-      joined: user.joinedAt,
-      email: user.email,
-      organization: user.organizationId,
-      isAdmin: user.isAdmin,
-      isModerator: user.isModerator,
-      bio: profile.bio,
-      name: profile.name,
-      country: profile.country,
-      birthday: profile.birthday,
-      photo: profile.photo,
-    };
-  }
+  // leave organization
+  // change organization
 
-  private async getUser(userId: string) {
+  // deactivate account
+
+  // delete account
+
+  // edit profile
+
+  // reset password
+
+  // ########################## helper functions ################################
+  async getUserById(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
       },
     });
     return user;
+  }
+  // change email
+  async updateEmail(userId: string, email: string) {
+    try {
+      await this.prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          email,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ForbiddenException(
+          'Email already exists, Change has to be unique',
+        );
+      } else {
+        throw error;
+      }
+    }
   }
 }

@@ -19,7 +19,7 @@ model User {
   isActive            Boolean            @default(true)
   password            String
   passwordChangedAt   DateTime           @default(now())
-  passwordResetToken  String?
+  passwordResetToken  String?            @unique
   passwordTokenExpiry DateTime?
   profile             Profile?
   posts               Post[]

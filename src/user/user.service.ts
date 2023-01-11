@@ -1,5 +1,5 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { Injectable } from '@nestjs/common';
+import { HandlePrismaDuplicateError } from 'src/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -38,16 +38,7 @@ export class UserService {
         },
       });
     } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ForbiddenException(
-          'Email already exists, Change has to be unique',
-        );
-      } else {
-        throw error;
-      }
+      new HandlePrismaDuplicateError(error, 'email');
     }
   }
 }

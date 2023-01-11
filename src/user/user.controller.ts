@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { ProfileService } from './profile.service';

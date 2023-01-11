@@ -38,3 +38,19 @@ export class RegisterDto {
   @IsString()
   photo: string;
 }
+
+export class passwordForgotDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class PasswordChangeDto {
+  @IsString()
+  @IsNotEmpty()
+  oldPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  newPassword: string;
+}

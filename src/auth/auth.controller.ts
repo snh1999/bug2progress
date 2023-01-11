@@ -6,13 +6,16 @@ import {
   Param,
   Req,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
   AuthDto,
   PasswordChangeDto,
-  passwordForgotDto,
+  PasswordForgotDto,
+  PasswordResetDto,
   RegisterDto,
 } from './dto';
 
@@ -20,19 +23,22 @@ import {
 export class AuthController {
   constructor(private authService: AuthService) {}
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.register(dto, res);
   }
 
   @Post('login')
-  login(@Body() dto: AuthDto) {
-    return this.authService.login(dto);
+  login(@Body() dto: AuthDto, @Res({ passthrough: true }) res: Response) {
+    return this.authService.login(dto, res);
   }
 
   @Post('forgotPassword')
   forgotPassword(
     @Headers('host') host: string,
-    @Body() dto: passwordForgotDto,
+    @Body() dto: PasswordForgotDto,
   ) {
     return this.authService.forgotPassword(host, dto.email);
   }
@@ -40,14 +46,19 @@ export class AuthController {
   @Post('resetPassword/:token')
   resetPasswordByToken(
     @Param('token') token: string,
-    @Body() dto: { password: string },
+    @Body() dto: PasswordResetDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.resetPassword(token, dto.password);
+    return this.authService.resetPassword(token, dto.password, res);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Post('resetPassword')
-  resetPassword(@Req() req: Request, @Body() dto: PasswordChangeDto) {
-    return this.authService.changePassword(req, dto);
+  @Post('changePassword')
+  changePassword(
+    @Req() req: Request,
+    @Body() dto: PasswordChangeDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.changePassword(req, res, dto);
   }
 }

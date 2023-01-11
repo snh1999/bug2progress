@@ -23,3 +23,9 @@ export class EditProfileDto {
   @IsOptional()
   photo?: string;
 }
+
+export class InputPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}

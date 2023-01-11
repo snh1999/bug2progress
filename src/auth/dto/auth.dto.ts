@@ -39,10 +39,16 @@ export class RegisterDto {
   photo: string;
 }
 
-export class passwordForgotDto {
+export class PasswordForgotDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+}
+
+export class PasswordResetDto {
+  @IsString()
+  @IsNotEmpty()
+  password: string;
 }
 
 export class PasswordChangeDto {
@@ -53,4 +59,10 @@ export class PasswordChangeDto {
   @IsString()
   @IsNotEmpty()
   newPassword: string;
+}
+
+export class TokenSignDto {
+  id: string;
+  username: string;
+  name: string;
 }

@@ -48,7 +48,6 @@ export class ProfileService {
       include: {
         user: {
           select: {
-            id: true,
             email: true,
             joinedAt: true,
             isAdmin: true,

@@ -4,16 +4,16 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto, PasswordChangeDto, RegisterDto } from './dto';
+import { AuthDto, PasswordChangeDto, RegisterDto, TokenSignDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { HandlePrismaDuplicateError } from '../interceptor/handle.prisma-error';
 import * as crypto from 'crypto';
 import { EmailService } from './email.service';
+import { Response } from 'express';
 @Injectable()
 export class AuthService {
   constructor(
@@ -23,20 +23,34 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
   // ################################# log in ################################
-  async login(dto: AuthDto) {
+  async login(dto: AuthDto, res: Response) {
     // find the user from email (inputted by user)
     const user = await this.findUserByEmail(dto.email);
     // user doesnot exist or input password didnot match with user password
     if (!user || !(await argon.verify(user.password, dto.password))) {
       throw new ForbiddenException('Email or password not matching');
     }
+    if (!user.isActive) {
+      await this.reactivateUser(user.id);
+    }
     // find the user name and username- delete if not required
     const profile = user.profile;
     delete user.profile;
-    return await this.signToken(user.id, profile.username, profile.name);
+    return await this.sendCookie(res, {
+      id: user.id,
+      username: profile.username,
+      name: profile.name,
+    });
+  }
+
+  async reactivateUser(userId) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: true },
+    });
   }
   // ################################# Register ################################
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, res: Response) {
     // generate hash of input password
     const password = await argon.hash(dto.password);
     // flag to check if username is incorrect (user created but not profile)
@@ -62,7 +76,11 @@ export class AuthService {
         },
       });
       // return token
-      return await this.signToken(user.id, profile.username, profile.name);
+      return await this.sendCookie(res, {
+        id: user.id,
+        name: profile.username,
+        username: profile.name,
+      });
     } catch (error) {
       // user is created but username wasnot unique
       if (userNoProfile) {
@@ -92,14 +110,27 @@ export class AuthService {
       await this.emailService.sendEmail(options); // token send to email
     } catch (err) {
       console.log(err);
-      await this.updatePasswordResetFields(email, undefined, undefined);
+      await this.updatePasswordResetFields(email, null, null);
       throw new InternalServerErrorException(
         'Error Occured while sending the email. Please Try again later',
       );
     }
   }
+
+  async generatePasswordResetToken(email: string) {
+    const tokenToSend = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = this.hashGivenToken(tokenToSend);
+
+    await this.updatePasswordResetFields(
+      email,
+      passwordResetToken,
+      new Date(Date.now() + 15 * 60 * 1000),
+    );
+
+    return tokenToSend;
+  }
   // ################################# reset password ################################
-  async resetPassword(token: string, password: string) {
+  async resetPassword(token: string, password: string, res: Response) {
     // get user from token
     const hashedToken = this.hashGivenToken(token);
     const user = await this.prisma.user.findFirst({
@@ -113,43 +144,50 @@ export class AuthService {
     // update password
     await this.updatePassword(user.id, password);
     // log user in(send back jwt)
-    return await this.signToken(
-      user.id,
-      user.profile.username,
-      user.profile.name,
-    );
+    return await this.sendCookie(res, {
+      id: user.id,
+      username: user.profile.username,
+      name: user.profile.name,
+    });
   }
   // ################################# change password ################################
-  async changePassword(req: Request, dto: PasswordChangeDto) {
+  async changePassword(req: Request, res: Response, dto: PasswordChangeDto) {
+    const userId = req['user'].id;
     const user = await this.prisma.user.findUnique({
-      where: { id: req['user'].id },
+      where: { id: userId },
     });
     // user doesnot exist or input password didnot match with user password
     if (!user || !(await argon.verify(user.password, dto.oldPassword))) {
       throw new ForbiddenException('Please input correct password');
     }
     const password = await argon.hash(dto.newPassword);
-    await this.prisma.user.update({
-      where: { id: req['user'].id },
-      data: { password },
+    await this.updatePassword(userId, password);
+    return await this.sendCookie(res, {
+      ...req['user'],
     });
   }
   // ################################# helper functions ################################
-  async signToken(
-    userId: string,
-    username: string,
-    name: string,
-  ): Promise<{ token: string }> {
-    const payload = {
-      id: userId,
-      username,
-      name,
+  async sendCookie(res: Response, payload: TokenSignDto) {
+    const token = await this.signToken(payload);
+    const cookieOptions = {
+      expires: new Date(new Date().getTime() + 30 * 1000),
+      // sameSite: 'strict',
+      httpOnly: true,
     };
+    if (this.config.get('Environment') != 'DEV') cookieOptions['secure'] = true;
+    res.cookie('token', token, cookieOptions);
+    return {
+      token,
+      message: 'Logged In successfully',
+    };
+  }
+
+  async signToken(payload: TokenSignDto) {
     const token = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get('TOKEN_EXPIRY_TIME'),
       secret: this.config.get('JWT_KEY'),
     });
-    return { token };
+    return token;
   }
 
   async findUserByEmail(email: string) {
@@ -166,18 +204,6 @@ export class AuthService {
     });
   }
 
-  async generatePasswordResetToken(email: string) {
-    const tokenToSend = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = this.hashGivenToken(tokenToSend);
-
-    await this.updatePasswordResetFields(
-      email,
-      passwordResetToken,
-      new Date(Date.now() + 15 * 60 * 1000),
-    );
-
-    return tokenToSend;
-  }
   hashGivenToken(token: string) {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
@@ -205,9 +231,9 @@ export class AuthService {
       },
       data: {
         password,
-        passwordChangedAt: new Date(Date.now()),
-        passwordResetToken: undefined,
-        passwordTokenExpiry: undefined,
+        passwordChangedAt: new Date(Date.now() - 1000),
+        passwordResetToken: null,
+        passwordTokenExpiry: null,
       },
     });
   }

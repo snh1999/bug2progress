@@ -10,7 +10,7 @@ import * as argon from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto, PasswordChangeDto, RegisterDto, TokenSignDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-import { HandlePrismaDuplicateError } from '../interceptor/handle.prisma-error';
+import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import * as crypto from 'crypto';
 import { EmailService } from './email.service';
 import { Response } from 'express';
@@ -48,6 +48,14 @@ export class AuthService {
       where: { id: userId },
       data: { isActive: true },
     });
+  }
+  // ################################# log in ################################
+  logout(res: Response) {
+    res.cookie('token', '', { expires: new Date() });
+    return {
+      token: '',
+      message: 'Logged Out successfully',
+    };
   }
   // ################################# Register ################################
   async register(dto: RegisterDto, res: Response) {
@@ -162,6 +170,7 @@ export class AuthService {
     }
     const password = await argon.hash(dto.newPassword);
     await this.updatePassword(userId, password);
+    console.log('here');
     return await this.sendCookie(res, {
       ...req['user'],
     });
@@ -231,7 +240,7 @@ export class AuthService {
       },
       data: {
         password,
-        passwordChangedAt: new Date(Date.now() - 1000),
+        passwordChangedAt: new Date(Date.now() - 1),
         passwordResetToken: null,
         passwordTokenExpiry: null,
       },

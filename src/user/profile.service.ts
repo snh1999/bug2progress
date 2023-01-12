@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EditProfileDto } from './dto';
 import { UserService } from './user.service';
@@ -9,20 +13,28 @@ export class ProfileService {
     private prisma: PrismaService,
     private userService: UserService,
   ) {}
-  // ########################## route functions ################################
-  async getProfile(userId: string) {
-    const profile = await this.getProfileById(userId);
-    const user = profile.user;
-    delete profile.user;
-    const organization = profile.organization;
-    delete profile.organization;
-    return {
-      ...profile,
-      ...user,
-      ...organization,
-    };
+  // ########################## view my profile ################################
+  async getMyProfile(userId: string) {
+    return await this.returnProfile(userId, true);
+  }
+  // ######################## view profile #############################
+  async viewUserProfile(username: string) {
+    const userid = await this.getIdFromUsername(username);
+    return await this.returnProfile(userid, false);
   }
 
+  async getIdFromUsername(username: string) {
+    const profile = await this.prisma.profile.findUnique({
+      where: {
+        username,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return profile.userId;
+  }
+  // ########################## edit profile ################################
   async editMyProfile(userId: string, dto: EditProfileDto) {
     // update email (from user)
     if (dto.email) {
@@ -39,30 +51,7 @@ export class ProfileService {
       },
     });
   }
-  // ########################## helper functions ################################
-  async getProfileById(id: string) {
-    const profile = await this.prisma.profile.findUnique({
-      where: {
-        userId: id,
-      },
-      include: {
-        user: {
-          select: {
-            email: true,
-            joinedAt: true,
-            isAdmin: true,
-            isModerator: true,
-          },
-        },
-        organization: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-    return profile;
-  }
+
   async updateUserEmail(userId: string, email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -76,5 +65,47 @@ export class ProfileService {
     }
 
     await this.userService.updateEmail(userId, email);
+  }
+  // ########################## helper functions ################################
+  async returnProfile(userid: string, isMe: boolean) {
+    const profile = await this.getProfileById(userid);
+    const user = profile.user;
+    delete profile.user;
+    const organization = profile.organization;
+    delete profile.organization;
+    if (isMe || user.isActive) {
+      delete user.isActive;
+      return {
+        ...profile,
+        ...user,
+        ...organization,
+      };
+    } else {
+      throw new NotFoundException('Resource not found');
+    }
+  }
+  async getProfileById(id: string) {
+    const profile = await this.prisma.profile.findUnique({
+      where: {
+        userId: id,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            joinedAt: true,
+            isActive: true,
+            isAdmin: true,
+            isModerator: true,
+          },
+        },
+        organization: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+    return profile;
   }
 }

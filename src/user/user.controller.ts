@@ -1,11 +1,22 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
-import { GetUser } from '../auth/decorator/getUser.decorator';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { GetUser } from '../common/decorator/get-user.decorator';
 import { ProfileService } from './profile.service';
 import { UserService } from './user.service';
 import { EditProfileDto, InputPasswordDto } from './dto';
+import { Public, Roles } from '../common/decorator';
+import { JwtAuthGuard, RolesGuard } from '../common/guard';
+import { Role } from '../common/dto';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(
@@ -15,7 +26,7 @@ export class UserController {
 
   @Get('me')
   getMyProfile(@GetUser('id') userId: string) {
-    return this.profileService.getProfile(userId);
+    return this.profileService.getMyProfile(userId);
   }
 
   @Patch('me')
@@ -38,4 +49,27 @@ export class UserController {
   ) {
     return this.userService.deactivateMyProfile(userId, dto.password);
   }
+
+  @Public()
+  @Get('/:username')
+  viewUserProfile(@Param('username') username: string) {
+    return this.profileService.viewUserProfile(username);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete('/:username')
+  deleteUser(@Param('username') username: string) {
+    return this.userService.deleteUser(username);
+  }
+
+  // pagination maybe
+  @UseGuards(RolesGuard)
+  @Roles(Role.USER)
+  @Get('')
+  getAllUsers() {
+    return this.userService.getAllUsers();
+  }
+
+  // view all active user
 }

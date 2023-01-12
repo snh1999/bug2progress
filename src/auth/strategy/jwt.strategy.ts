@@ -39,6 +39,11 @@ export class JWTStrategy extends PassportStrategy(Strategy) {
     const passwordChangedAt = user.passwordChangedAt.getTime() / 1000 - 1; // parseInt(user.passwordChangedAt.getTime() / 1000);
     if (payload.iat < passwordChangedAt)
       throw new UnauthorizedException('Please Log in again to continue');
-    return payload;
+    return {
+      id: payload.id,
+      name: payload.name,
+      username: payload.username,
+      role: user.role,
+    };
   }
 }

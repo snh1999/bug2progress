@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Res,
+  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
@@ -50,6 +51,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.authService.resetPassword(token, dto.password, res);
+  }
+
+  @Get('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(res);
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class EditProfileDto {
   @IsString()
@@ -22,10 +22,4 @@ export class EditProfileDto {
   @IsString()
   @IsOptional()
   photo?: string;
-}
-
-export class InputPasswordDto {
-  @IsString()
-  @IsNotEmpty()
-  password: string;
 }

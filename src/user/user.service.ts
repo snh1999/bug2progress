@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { HandlePrismaDuplicateError } from 'src/interceptor/handle.prisma-error';
+import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
 
@@ -10,7 +10,7 @@ export class UserService {
   // leave organization
   // change organization
 
-  // deactivate account
+  // ########################## deactivate account ##############################
   async deactivateMyProfile(userId: string, password: string) {
     // check if user password is correct
     if (!(await this.checkPassword(userId, password)))
@@ -24,9 +24,9 @@ export class UserService {
       status: 'sucess',
       message: 'Log back in to reactivate your account',
     };
-    // logout
   }
-  // delete account
+
+  // ########################## delete account ##############################
   async deleteMyProfile(userId: string, password: string) {
     // check if user password is correct
     if (!(await this.checkPassword(userId, password)))
@@ -38,6 +38,37 @@ export class UserService {
     // logout
   }
 
+  // ########################## delete user(ADMIN) ##############################
+  async deleteUser(username: string) {
+    const id = await this.getIdFromUsername(username);
+    await this.prisma.user.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async getIdFromUsername(username: string) {
+    const profile = await this.prisma.profile.findUnique({
+      where: {
+        username,
+      },
+      select: {
+        userId: true,
+      },
+    });
+    return profile.userId;
+  }
+
+  // ########################## view all user(ADMIN) ##############################
+  async getAllUsers() {
+    const user = await this.prisma.user.findMany({
+      include: { profile: true },
+    });
+    return {
+      ...user,
+    };
+  }
   // ########################## helper functions ################################
   async checkPassword(userId: string, password: string) {
     const user = await this.prisma.user.findUnique({

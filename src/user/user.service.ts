@@ -61,7 +61,7 @@ export class UserService {
   }
 
   // ########################## view all user(ADMIN) ##############################
-  async getAllUsers() {
+  async findAll() {
     const user = await this.prisma.user.findMany({
       include: { profile: true },
     });
@@ -81,14 +81,14 @@ export class UserService {
     return true;
   }
 
-  async getUserById(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-    return user;
-  }
+  // async getUserById(userId: string) {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: {
+  //       id: userId,
+  //     },
+  //   });
+  //   return user;
+  // }
 
   async updateEmail(userId: string, email: string) {
     try {

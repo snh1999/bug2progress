@@ -148,12 +148,12 @@ describe('App e2e', () => {
   });
   describe('User ', () => {
     it('no header, should fail as unauthorized', () => {
-      return pactum.spec().get('/user/me').expectStatus(401);
+      return pactum.spec().get('/u/me').expectStatus(401);
     });
-    it('header, should fail', () => {
+    it('header, should succeed', () => {
       return pactum
         .spec()
-        .get('/user/me')
+        .get('/u/me')
         .withHeaders({
           Authorization: 'Bearer $S{user_auth}',
         })

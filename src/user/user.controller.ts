@@ -17,24 +17,40 @@ import { JwtAuthGuard, RolesGuard } from '../common/guard';
 import { Role } from '../common/dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller('user')
+@Controller()
 export class UserController {
   constructor(
     private userService: UserService,
     private profileService: ProfileService,
   ) {}
 
-  @Get('me')
+  // pagination maybe
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('user')
+  findAll() {
+    return this.userService.findAll();
+  }
+  // view all active user
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete('u/:username')
+  deleteUser(@Param('username') username: string) {
+    return this.userService.deleteUser(username);
+  }
+
+  @Get('u/me')
   getMyProfile(@GetUser('id') userId: string) {
     return this.profileService.getMyProfile(userId);
   }
 
-  @Patch('me')
+  @Patch('u/me')
   editMyProfile(@GetUser('id') userid: string, @Body() dto: EditProfileDto) {
     return this.profileService.editMyProfile(userid, dto);
   }
 
-  @Post('me/delete')
+  @Post('u/me/delete')
   deleteMyProfile(
     @GetUser('id') userId: string,
     @Body() dto: InputPasswordDto,
@@ -42,7 +58,7 @@ export class UserController {
     return this.userService.deleteMyProfile(userId, dto.password);
   }
 
-  @Post('me/deactivate')
+  @Post('u/me/deactivate')
   deactivateMyProfile(
     @GetUser('id') userId: string,
     @Body() dto: InputPasswordDto,
@@ -51,25 +67,8 @@ export class UserController {
   }
 
   @Public()
-  @Get('/:username')
+  @Get('u/:username')
   viewUserProfile(@Param('username') username: string) {
     return this.profileService.viewUserProfile(username);
   }
-
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @Delete('/:username')
-  deleteUser(@Param('username') username: string) {
-    return this.userService.deleteUser(username);
-  }
-
-  // pagination maybe
-  @UseGuards(RolesGuard)
-  @Roles(Role.USER)
-  @Get('')
-  getAllUsers() {
-    return this.userService.getAllUsers();
-  }
-
-  // view all active user
 }

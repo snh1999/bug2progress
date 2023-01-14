@@ -23,10 +23,6 @@ model User {
   passwordTokenExpiry DateTime?
   profile             Profile?
   posts               Post[]
-  organization        Organization?      @relation(fields: [organizationId], references: [id])
-  organizationId      String?
-  isAdmin             Boolean            @default(false)
-  isModerator         Boolean            @default(false)
   // ownedOrganization   Organization  @relation("admin")
   // Organization        Organization  @relation("moderator")
   projectOwned        ProjectRoles[]     @relation("owner")
@@ -41,6 +37,11 @@ model User {
   ticketAssigner      TicketRoles?       @relation("assign")
   developerTicket     TicketRoles[]
   projectXFeatures    ProjectXFeatures[]
+
+  organizationOwner     OrganizationRoles[] @relation("owner")
+  organizationAdmin     OrganizationRoles[] @relation("admin")
+  organizationModerator OrganizationRoles[] @relation("moderator")
+  organizationJoined    Organization[]
 }
 
 enum Role {
@@ -49,16 +50,14 @@ enum Role {
 }
 
 model Profile {
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String        @id
-  bio            String?
-  name           String
-  username       String        @unique
-  country        String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  organizationId String?
-  birthday       DateTime?
-  photo          String?
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String    @id
+  bio      String?
+  name     String
+  username String    @unique
+  country  String?
+  birthday DateTime?
+  photo    String?
 }
 
 // model preferences
@@ -99,18 +98,28 @@ model Post {
 }
 
 model Organization {
-  id          String    @id @default(uuid())
-  name        String
-  description String
-  customURL   String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  updateLog   String
+  id                String             @id @default(uuid())
+  name              String
+  description       String
+  URLId             String             @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  updateLog         String
   // 	- time - by whom - action  // create a folder and store there?
-  profile     Profile[] // member profiles
-  user        User[] // members
-  post        Post[] // posts owned by organization
-  project     Project[]
+  members           User[] // members
+  post              Post[] // posts owned by organization
+  project           Project[]
+  organizationRoles OrganizationRoles?
+}
+
+model OrganizationRoles {
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId        String       @id
+  // if org, owner = org owner
+  owner        User         @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId      String
+  admin        User[]       @relation("admin")
+  moderator    User[]       @relation("moderator")
 }
 
 model Project {

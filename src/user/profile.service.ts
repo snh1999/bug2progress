@@ -71,14 +71,11 @@ export class ProfileService {
     const profile = await this.getProfileById(userid);
     const user = profile.user;
     delete profile.user;
-    const organization = profile.organization;
-    delete profile.organization;
     if (isMe || user.isActive) {
       delete user.isActive;
       return {
         ...profile,
         ...user,
-        ...organization,
       };
     } else {
       throw new NotFoundException('Resource not found');
@@ -95,13 +92,6 @@ export class ProfileService {
             email: true,
             joinedAt: true,
             isActive: true,
-            isAdmin: true,
-            isModerator: true,
-          },
-        },
-        organization: {
-          select: {
-            name: true,
           },
         },
       },

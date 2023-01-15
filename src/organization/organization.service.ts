@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import e from 'express';
 import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';

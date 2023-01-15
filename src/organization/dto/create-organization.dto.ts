@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsAlphanumeric } from 'class-validator';
 
 export class CreateOrganizationDto {
   @IsString()
@@ -9,7 +9,7 @@ export class CreateOrganizationDto {
   @IsNotEmpty()
   description: string;
 
-  @IsString()
+  @IsAlphanumeric()
   @IsNotEmpty()
   urlid: string;
 }

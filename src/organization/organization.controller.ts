@@ -15,7 +15,7 @@ import {
   UpdateOrganizationDto,
 } from './dto';
 import { JwtAuthGuard } from '../common/guard';
-import { GetUser } from '../common/decorator';
+import { GetUser, Public } from '../common/decorator';
 import { AddUserDto } from './dto';
 
 @UseGuards(JwtAuthGuard)
@@ -32,6 +32,7 @@ export class OrganizationController {
     return this.organizationService.create(createOrganizationDto, userid);
   }
 
+  @Public()
   @Get('organization')
   findAll() {
     return this.organizationService.findAll();
@@ -132,6 +133,7 @@ export class OrganizationController {
     return this.organizationService.findProjects(orgid);
   }
 
+  @Public()
   @Get('o/:orgid')
   findOne(@Param('orgid') orgid: string) {
     return this.organizationService.findOne(orgid);
@@ -155,10 +157,5 @@ export class OrganizationController {
   @Delete('o/:orgid')
   remove(@Param('orgid') orgid: string, @GetUser('id') userid: string) {
     return this.organizationService.remove(orgid, userid);
-  }
-
-  @Get('/:orgid')
-  testRoute(@Param('orgid') orgid: string) {
-    return this.organizationService.getAdminIds(orgid);
   }
 }

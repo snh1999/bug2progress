@@ -69,7 +69,7 @@ model Post {
   published       Boolean  @default(false)
   updatedAt       DateTime @updatedAt
   summary         String
-  slug            String   @unique
+  slug            String?  @unique
   postContent     String
   attachmentFiles String[]
   isPublic        Boolean  @default(true)

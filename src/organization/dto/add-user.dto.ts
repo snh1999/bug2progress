@@ -6,6 +6,11 @@ export class AddUserDto {
   userName: string;
 }
 
+export class RemoveUserDto {
+  @IsString()
+  @IsNotEmpty()
+  userName: string;
+}
 export class AddUsersDto {
   @IsString()
   @IsNotEmpty()

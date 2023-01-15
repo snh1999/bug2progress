@@ -9,7 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
-import { CreateOrganizationDto, UpdateOrganizationDto } from './dto';
+import {
+  CreateOrganizationDto,
+  RemoveUserDto,
+  UpdateOrganizationDto,
+} from './dto';
 import { JwtAuthGuard } from '../common/guard';
 import { GetUser } from '../common/decorator';
 import { AddUserDto } from './dto';
@@ -19,6 +23,7 @@ import { AddUserDto } from './dto';
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
+  // ############################ Get all Org, Create New ##############################
   @Post('organization')
   create(
     @Body() createOrganizationDto: CreateOrganizationDto,
@@ -32,19 +37,19 @@ export class OrganizationController {
     return this.organizationService.findAll();
   }
 
+  // ############################ Get all member, Remove existing ##############################
   @Get('o/:orgid/members')
-  findMembers(@Param('orgid') orgid: string) {
-    return this.organizationService.findMembers(orgid);
+  viewAllMembers(@Param('orgid') orgid: string) {
+    return this.organizationService.viewAllMembers(orgid);
   }
 
-  @Get('o/:orgid/posts')
-  findPosts(@Param('orgid') orgid: string) {
-    return this.organizationService.findPosts(orgid);
-  }
-
-  @Get('o/:orgid/projects')
-  findProjects(@Param('orgid') orgid: string) {
-    return this.organizationService.findProjects(orgid);
+  @Delete('o/:orgid/members')
+  removeMember(
+    @Param('orgid') orgid: string,
+    @Body() dto: RemoveUserDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.organizationService.removeMember(orgid, dto.userName, userid);
   }
 
   @Get('o/:orgid/join')
@@ -55,13 +60,76 @@ export class OrganizationController {
     return this.organizationService.joinOrganization(orgid, userid);
   }
 
-  @Post('o/:orgid/addAdmin')
+  @Get('o/:orgid/leave')
+  leaveOrganization(
+    @Param('orgid') orgid: string,
+    @GetUser('id') userid: string,
+  ) {
+    return this.organizationService.leaveOrganization(orgid, userid);
+  }
+  // ############################ Get all admin, Add new, Remove existing ##############################
+  @Get('o/:orgid/admin')
+  viewAllAdmin(@Param('orgid') orgid: string) {
+    return this.organizationService.viewAllAdmin(orgid);
+  }
+
+  @Post('o/:orgid/admin')
   addNewAdmin(
     @Param('orgid') orgid: string,
     @Body() dto: AddUserDto,
     @GetUser('id') userid: string,
   ) {
-    return this.organizationService.addNewAdmin(orgid, dto, userid);
+    return this.organizationService.addNewAdmin(orgid, dto.userName, userid);
+  }
+
+  @Delete('o/:orgid/admin')
+  removeAdmin(
+    @Param('orgid') orgid: string,
+    @Body() dto: AddUserDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.organizationService.removeAdmin(orgid, dto.userName, userid);
+  }
+  // ############################ Get all admin, Add new, Remove existing ##############################
+  @Get('o/:orgid/moderator')
+  viewAllModerators(@Param('orgid') orgid: string) {
+    return this.organizationService.viewAllModerator(orgid);
+  }
+
+  @Post('o/:orgid/moderator')
+  addNewModerators(
+    @Param('orgid') orgid: string,
+    @Body() dto: AddUserDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.organizationService.addNewModerator(
+      orgid,
+      dto.userName,
+      userid,
+    );
+  }
+  @Delete('o/:orgid/moderator')
+  removeModerator(
+    @Param('orgid') orgid: string,
+    @Body() dto: AddUserDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.organizationService.removeModerator(
+      orgid,
+      dto.userName,
+      userid,
+    );
+  }
+
+  // ############################ Get all posts, projects, organization page ##############################
+  @Get('o/:orgid/posts')
+  findPosts(@Param('orgid') orgid: string) {
+    return this.organizationService.findPosts(orgid);
+  }
+
+  @Get('o/:orgid/projects')
+  findProjects(@Param('orgid') orgid: string) {
+    return this.organizationService.findProjects(orgid);
   }
 
   @Get('o/:orgid')
@@ -69,6 +137,7 @@ export class OrganizationController {
     return this.organizationService.findOne(orgid);
   }
 
+  // ############################ Get edit, delete ##############################
   // check admin later
   @Patch('o/:orgid')
   update(
@@ -86,5 +155,10 @@ export class OrganizationController {
   @Delete('o/:orgid')
   remove(@Param('orgid') orgid: string, @GetUser('id') userid: string) {
     return this.organizationService.remove(orgid, userid);
+  }
+
+  @Get('/:orgid')
+  testRoute(@Param('orgid') orgid: string) {
+    return this.organizationService.getAdminIds(orgid);
   }
 }

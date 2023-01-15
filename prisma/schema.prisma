@@ -10,6 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ################################# USER #############################
 model User {
   id                  String             @id @default(uuid())
   joinedAt            DateTime           @default(now())
@@ -25,9 +26,6 @@ model User {
   posts               Post[]
   // ownedOrganization   Organization  @relation("admin")
   // Organization        Organization  @relation("moderator")
-  projectOwned        ProjectRoles[]     @relation("owner")
-  projectManaged      ProjectRoles[]     @relation("manager")
-  projectDeveloped    ProjectRoles[]     @relation("developer")
   // Project             Project[]
   postComment         PostComment[]
   ticketComment       TicketComment[]
@@ -35,13 +33,14 @@ model User {
   ticketVarifier      TicketRoles?       @relation("varifier")
   ticketCloser        TicketRoles?       @relation("closer")
   ticketAssigner      TicketRoles?       @relation("assign")
-  developerTicket     TicketRoles[]
+  developerTicket     TicketRoles?       @relation("developer")
   projectXFeatures    ProjectXFeatures[]
 
-  organizationOwner     OrganizationRoles[] @relation("owner")
-  organizationAdmin     OrganizationRoles[] @relation("admin")
-  organizationModerator OrganizationRoles[] @relation("moderator")
-  organizationJoined    Organization[]
+  orgOwned  Organization[]
+  orgJoined OrgMembers[]
+
+  projectOwned   Project[]
+  projectManaged ProjectContributor[]
 }
 
 enum Role {
@@ -49,6 +48,7 @@ enum Role {
   ADMIN
 }
 
+// dependant on exactly one USER- PK userid is same as USER
 model Profile {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   String    @id
@@ -97,31 +97,43 @@ model Post {
   features    Features?
 }
 
+// ################################# Organization #############################
 model Organization {
-  id                String             @id @default(uuid())
-  name              String
-  description       String
-  URLId             String             @unique
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  updateLog         String
+  id          String       @id @default(uuid())
+  name        String
+  description String
+  urlid       String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  updateLog   String
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
   // 	- time - by whom - action  // create a folder and store there?
-  members           User[] // members
-  post              Post[] // posts owned by organization
-  project           Project[]
-  organizationRoles OrganizationRoles?
+  post        Post[] // posts owned by organization
+  project     Project[]
+  members     OrgMembers[]
 }
 
-model OrganizationRoles {
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId        String       @id
-  // if org, owner = org owner
-  owner        User         @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId      String
-  admin        User[]       @relation("admin")
-  moderator    User[]       @relation("moderator")
+// keeps track of MEMBERS OF ORGANIZATION
+model OrgMembers {
+  org            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  memberType MemberType @default(MEMBER)
+
+  @@id([organizationId, userId])
 }
 
+enum MemberType {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+// ################################# Project #############################
 model Project {
   id        String   @id @default(uuid())
   customURL String   @unique
@@ -133,13 +145,14 @@ model Project {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
 
-  projectRoles ProjectRoles?
-
   status   ProjectStatus
   isPublic Boolean       @default(true)
 
   basePost   Post   @relation("basePost", fields: [basePostId], references: [id])
   basePostId String @unique
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
 
   // status - in dev | released version | depricated
   // 			project page shows the 
@@ -151,6 +164,7 @@ model Project {
   post             Post[]
   projectXFeatures ProjectXFeatures[]
   ticket           Ticket[]
+  Manager          ProjectContributor[]
 }
 
 enum ProjectStatus {
@@ -162,21 +176,24 @@ enum ProjectStatus {
   OBSOLETE
 }
 
-model ProjectRoles {
-  // id String @id @default(uuid())
-
+model ProjectContributor {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String  @id
-  // if org, owner = org owner
-  owner     User    @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId   String
+  projectId String
 
-  manager   User?   @relation("manager", fields: [managerId], references: [id])
-  managerId String?
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 
-  developers User[] @relation("developer")
+  role ProjectRole @default(DEVELOPER)
+
+  @@id([projectId, userId])
 }
 
+enum ProjectRole {
+  MANAGER
+  DEVELOPER
+}
+
+// ################################# Features #############################
 // author, is public
 model Features {
   id               String             @id @default(uuid())
@@ -192,7 +209,7 @@ model Features {
 }
 
 model ProjectXFeatures {
-  project     Project     @relation(fields: [projectId], references: [id])
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId   String
   feature     Features    @relation(fields: [featuresId], references: [id])
   featuresId  String
@@ -212,6 +229,7 @@ enum FeatureType {
   OBSOLETE
 }
 
+// ################################# Comment #############################
 model PostComment {
   id String @id @default(uuid())
 
@@ -245,6 +263,8 @@ model TicketComment {
   successor     TicketComment[] @relation("commentHistory")
 }
 
+// ################################# Ticket #############################
+
 model Ticket {
   id             String         @id @default(uuid())
   title          String
@@ -256,7 +276,7 @@ model Ticket {
   ticketSeverity TicketSeverity
   ticketPriority TicketPriority
 
-  project                    Project           @relation(fields: [projectId], references: [id])
+  project                    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId                  String
   feature                    ProjectXFeatures? @relation(fields: [projectId, projectXFeaturesFeaturesId], references: [projectId, featuresId])
   projectXFeaturesFeaturesId String?
@@ -296,7 +316,7 @@ model TicketRoles {
   creator   User   @relation("creator", fields: [creatorId], references: [id])
   creatorId String @unique
 
-  varifiedBy User?   @relation("varifier", fields: [varifierId], references: [id]) // (admin| manager| owner)
+  varifiedBy User?   @relation("varifier", fields: [varifierId], references: [id]) // (admin| manager| owner) - either varify/ close
   varifierId String? @unique
 
   closedBy User?   @relation("closer", fields: [closeId], references: [id]) // (admin| manager| owner)
@@ -305,5 +325,6 @@ model TicketRoles {
   assignedBy User?   @relation("assign", fields: [assignedId], references: [id]) // (admin| manager| owner)
   assignedId String? @unique
 
-  developers User[]
+  assignedTo  User?   @relation("developer", fields: [developerId], references: [id]) // (admin| manager| owner)
+  developerId String? @unique
 }

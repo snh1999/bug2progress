@@ -11,5 +11,5 @@ export class CreateOrganizationDto {
 
   @IsString()
   @IsNotEmpty()
-  URLId: string;
+  urlid: string;
 }

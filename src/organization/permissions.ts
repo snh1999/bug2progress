@@ -1,0 +1,20 @@
+export enum OrgRoles {
+  OWNER,
+  ADMIN,
+  MODERATOR,
+}
+
+export enum MemberType {
+  ADMIN,
+  MODERATOR,
+  MEMBER,
+}
+export const DELETE_PERMISSION = OrgRoles.OWNER;
+export const UPDATE_PERMISSION = OrgRoles.ADMIN;
+export const REMOVE_MEMBER_PERMISSION = OrgRoles.MODERATOR;
+
+export const NEW_ADMIN_PERMISSION = OrgRoles.OWNER;
+export const REMOVE_ADMIN_PERMISSION = NEW_ADMIN_PERMISSION;
+
+export const NEW_MODERATOR_PERMISSION = OrgRoles.ADMIN;
+export const REMOVE_MODERATOR_PERMISSION = NEW_MODERATOR_PERMISSION;

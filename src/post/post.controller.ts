@@ -12,6 +12,7 @@ import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from 'src/common/guard';
+import { GetUser } from 'src/common/decorator';
 
 @Controller('post')
 @UseGuards(JwtAuthGuard)
@@ -19,8 +20,8 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post()
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postService.create(createPostDto);
+  create(@Body() createPostDto: CreatePostDto, @GetUser('id') userid: string) {
+    return this.postService.create(createPostDto, userid);
   }
 
   @Get()
@@ -34,12 +35,16 @@ export class PostController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postService.update(id, updatePostDto);
+  update(
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdatePostDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.postService.update(id, updatePostDto, userid);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postService.remove(id);
+  remove(@Param('id') id: string, @GetUser('id') userid: string) {
+    return this.postService.remove(id, userid);
   }
 }

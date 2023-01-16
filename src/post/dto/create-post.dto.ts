@@ -28,6 +28,10 @@ export class CreatePostDto {
   @IsOptional()
   attachmentFiles: string[];
 
+  @IsAlphanumeric()
+  @IsOptional()
+  organizationId: string;
+
   @IsBoolean()
   @IsOptional()
   isPublic?: boolean;

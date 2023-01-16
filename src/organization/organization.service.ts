@@ -8,6 +8,7 @@ import {
 import { Organization } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
+import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -15,24 +16,28 @@ import * as ORG from './permissions';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private userService: UserService,
+  ) {}
 
   // ############################## create organization ############################
-  async create(createOrganizationDto: CreateOrganizationDto, userid: string) {
+  async create(dto: CreateOrganizationDto, userid: string) {
     let org: Organization;
     try {
       org = await this.prisma.organization.create({
         data: {
-          ...createOrganizationDto,
+          ...dto,
           updateLog: ' ',
           ownerId: userid,
         },
       });
     } catch (error) {
-      new HandlePrismaDuplicateError(error, 'url id');
+      new HandlePrismaDuplicateError(error, 'urlid');
     }
     return {
-      ...org,
+      message: 'succesfully created',
+      url: '/organization/' + org.urlid,
     };
   }
 
@@ -71,7 +76,8 @@ export class OrganizationService {
   }
   // ############################# view all members of org #########################
   async viewAllMembers(orgurl: string) {
-    const orgId = await this.getIdFromUrl(orgurl);
+    // using another model, so we have to get the ID
+    const orgId = await this.getOrgId(orgurl);
     return await this.prisma.orgMembers.findMany({
       where: {
         organizationId: orgId,
@@ -125,6 +131,7 @@ export class OrganizationService {
     updateOrganizationDto: UpdateOrganizationDto,
     userid: string,
   ) {
+    // organization not found handled here
     await this.isUserAuthorized(orgurl, userid, ORG.UPDATE_PERMISSION);
     // user is authorized- update org
     const org = await this.prisma.organization.update({
@@ -135,24 +142,24 @@ export class OrganizationService {
         ...updateOrganizationDto,
       },
     });
-    return org;
+    return {
+      message: 'updated successfully',
+      url: 'organization/' + org.urlid,
+    };
   }
 
   // ############################# delete organization (only owner can) #########################
   async remove(orgid: string, userid: string) {
     // username to id
     await this.isUserAuthorized(orgid, userid, ORG.DELETE_PERMISSION);
-    await this.deleteOrgByUrlId(orgid);
-    return {
-      message: 'Organization deleted successfully',
-    };
-  }
-  async deleteOrgByUrlId(orgid: string) {
     await this.prisma.organization.delete({
       where: {
         urlid: orgid,
       },
     });
+    return {
+      message: 'Deleted successfully',
+    };
   }
   // ############################# view all admin ############################
   async viewAllAdmin(orgurl: string) {
@@ -181,14 +188,15 @@ export class OrganizationService {
         },
       },
     });
+    if (!org) return new NotFoundException('404 Not found');
     return org.members;
   }
   // ############################# add admin (OWNER) ###########################
   async addNewAdmin(orgurl: string, userToAdd: string, userid: string) {
     await this.isUserAuthorized(orgurl, userid, ORG.NEW_ADMIN_PERMISSION);
-    const idToAdd = await this.getIDfromUsername(userToAdd);
+    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
     if (!idToAdd) return new BadRequestException('Invalid username');
-    const orgId = await this.getIdFromUrl(orgurl);
+    const orgId = await this.getOrgId(orgurl);
     try {
       const member = await this.prisma.orgMembers.update({
         where: {
@@ -217,9 +225,9 @@ export class OrganizationService {
   }
 
   async changeToMember(orgurl: string, userToAdd: string) {
-    const idToAdd = await this.getIDfromUsername(userToAdd);
+    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
     if (!idToAdd) return new BadRequestException('Invalid username');
-    const orgId = await this.getIdFromUrl(orgurl);
+    const orgId = await this.getOrgId(orgurl);
     try {
       const member = await this.prisma.orgMembers.update({
         where: {
@@ -274,9 +282,9 @@ export class OrganizationService {
   // ############################# add moderator ###########################
   async addNewModerator(orgurl: string, userToAdd: string, userid: string) {
     await this.isUserAuthorized(orgurl, userid, ORG.NEW_MODERATOR_PERMISSION);
-    const idToAdd = await this.getIDfromUsername(userToAdd);
+    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
     if (!idToAdd) return new BadRequestException('Invalid username');
-    const orgId = await this.getIdFromUrl(orgurl);
+    const orgId = await this.getOrgId(orgurl);
     try {
       const member = await this.prisma.orgMembers.update({
         where: {
@@ -310,7 +318,7 @@ export class OrganizationService {
 
   // ############################# join organization ##########################
   async joinOrganization(orgurl: string, userid: string) {
-    const organizationId = await this.getIdFromUrl(orgurl);
+    const organizationId = await this.getOrgId(orgurl);
     // check if it is owner
     try {
       await this.prisma.orgMembers.create({
@@ -335,7 +343,7 @@ export class OrganizationService {
 
   // ############################# leave organization ##########################
   async leaveOrganization(orgurl: string, userid: string) {
-    const organizationId = await this.getIdFromUrl(orgurl);
+    const organizationId = await this.getOrgId(orgurl);
     try {
       await this.prisma.orgMembers.delete({
         where: {
@@ -346,10 +354,7 @@ export class OrganizationService {
         },
       });
     } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code == 'P2002'
-      ) {
+      if (error instanceof PrismaClientKnownRequestError) {
         throw new BadRequestException('User is not a member of organization');
       }
       throw new BadRequestException(error.message);
@@ -362,8 +367,8 @@ export class OrganizationService {
   async removeMember(orgid: string, userToRemove: string, userid: string) {
     await this.isUserAuthorized(orgid, userid, ORG.REMOVE_MEMBER_PERMISSION);
 
-    const idToRemove = await this.getIDfromUsername(userToRemove);
-    const organizationId = await this.getIdFromUrl(orgid);
+    const idToRemove = await this.userService.getIdFromUsername(userToRemove);
+    const organizationId = await this.getOrgId(orgid);
     try {
       await this.prisma.orgMembers.delete({
         where: {
@@ -386,29 +391,24 @@ export class OrganizationService {
   }
 
   // ############################# find id from url ##########################
-  async getIdFromUrl(url: string) {
-    const org = await this.prisma.organization.findUnique({
+  async getOrgId(urlOrId: string) {
+    const org = await this.prisma.organization.findFirst({
       where: {
-        urlid: url,
+        OR: [
+          {
+            urlid: urlOrId,
+          },
+          {
+            id: urlOrId,
+          },
+        ],
       },
       select: {
         id: true,
       },
     });
+    if (!org) throw new NotFoundException('404 Not found');
     return org.id;
-  }
-
-  async getIDfromUsername(username: string) {
-    const user = await this.prisma.profile.findUnique({
-      where: {
-        username: username,
-      },
-      select: {
-        userId: true,
-      },
-    });
-    if (!user) throw new BadRequestException('No Such User exists');
-    return user.userId;
   }
 
   // ############################# helper functions ##########################
@@ -455,6 +455,8 @@ export class OrganizationService {
         ownerId: true,
       },
     });
+    if (!orgRoles) return new NotFoundException('404 Not found');
+
     return orgRoles.ownerId;
   }
 

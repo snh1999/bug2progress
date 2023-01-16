@@ -13,12 +13,13 @@ export class CreatePostDto {
   title: string;
 
   @IsString()
-  @IsNotEmpty()
-  summary: string;
+  @IsOptional()
+  summary?: string;
 
   @IsAlphanumeric()
   @IsNotEmpty()
-  slug: string;
+  @IsOptional()
+  slug?: string;
 
   @IsString()
   @IsNotEmpty()

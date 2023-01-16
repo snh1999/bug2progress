@@ -19,20 +19,8 @@ export class ProfileService {
   }
   // ######################## view profile #############################
   async viewUserProfile(username: string) {
-    const userid = await this.getIdFromUsername(username);
+    const userid = await this.userService.getIdFromUsername(username);
     return await this.returnProfile(userid, false);
-  }
-
-  async getIdFromUsername(username: string) {
-    const profile = await this.prisma.profile.findUnique({
-      where: {
-        username,
-      },
-      select: {
-        userId: true,
-      },
-    });
-    return profile.userId;
   }
   // ########################## edit profile ################################
   async editMyProfile(userId: string, dto: EditProfileDto) {
@@ -81,6 +69,7 @@ export class ProfileService {
       throw new NotFoundException('Resource not found');
     }
   }
+
   async getProfileById(id: string) {
     const profile = await this.prisma.profile.findUnique({
       where: {

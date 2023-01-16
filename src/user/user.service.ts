@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
@@ -57,6 +61,7 @@ export class UserService {
         userId: true,
       },
     });
+    if (!profile) throw new NotFoundException('Wrong Username');
     return profile.userId;
   }
 

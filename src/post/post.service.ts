@@ -1,37 +1,45 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Post } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
+import { OrganizationService } from 'src/organization/organization.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private orgService: OrganizationService,
+  ) {}
 
   async create(dto: CreatePostDto, userId: string) {
     if (dto.organizationId) {
-      dto.organizationId = await this.getOrgIdfromUrl(dto.organizationId);
-      if (!dto.organizationId) {
-        throw new BadRequestException('Incorrect Organization Url');
-      }
+      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }
-    const post = await this.prisma.post.create({
-      data: {
-        ...dto,
-        authorId: userId,
-      },
-    });
+    // no summary, use first line of post
+    if (!dto.summary) {
+      dto.summary = dto.postContent.split('.')[0];
+    }
+    let post;
+    try {
+      post = await this.prisma.post.create({
+        data: {
+          ...dto,
+          authorId: userId,
+        },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError)
+        new HandlePrismaDuplicateError(error, 'slug');
+    }
 
     // no slug? make it same as id
     if (!post.slug) this.update(post.id, { slug: post.id }, userId);
     return {
       message: 'created successfully',
       url: '/post/' + post.id,
+      postid: post.id,
     };
   }
 
@@ -47,7 +55,7 @@ export class PostService {
   }
 
   async findOne(id: string) {
-    return await this.prisma.post.findFirst({
+    const post = await this.prisma.post.findFirst({
       where: {
         OR: [
           {
@@ -58,16 +66,29 @@ export class PostService {
           },
         ],
       },
+      include: {
+        postComment: {
+          take: 10,
+          orderBy: {
+            updatedAt: 'desc',
+          },
+        },
+      },
     });
+    if (!post) throw new NotFoundException('404 Not found');
+    return post;
   }
 
   async update(id: string, dto: UpdatePostDto, userid: string) {
+    if (dto.organizationId) {
+      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
+    }
     const post = await this.findOne(id);
-    this.checkauthorization(post, userid);
 
-    await this.prisma.post.update({
+    await this.prisma.post.updateMany({
       where: {
         id: post.id,
+        authorId: userid,
       },
       data: {
         ...dto,
@@ -81,10 +102,11 @@ export class PostService {
 
   async remove(id: string, userid: string) {
     const post = await this.findOne(id);
-    this.checkauthorization(post, userid);
-    await this.prisma.post.delete({
+
+    await this.prisma.post.deleteMany({
       where: {
         id: post.id,
+        authorId: userid,
       },
     });
     return {
@@ -92,22 +114,15 @@ export class PostService {
     };
   }
 
-  checkauthorization(post: Post, userid: string) {
-    if (!post) throw new NotFoundException('404 not found');
-    if (post.authorId != userid)
-      throw new UnauthorizedException('You are not author of the post');
-  }
-
   // ########################### helper function #################
-  async getOrgIdfromUrl(url: string) {
-    const org = await this.prisma.organization.findUnique({
-      where: {
-        urlid: url,
-      },
-      select: {
-        id: true,
+
+  async createBasePost(userId: string, title: string, summary: string) {
+    return await this.prisma.post.create({
+      data: {
+        title,
+        postContent: 'This post is automatically genereted.' + summary,
+        authorId: userId,
       },
     });
-    if (org) return org.id;
   }
 }

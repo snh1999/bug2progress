@@ -68,7 +68,7 @@ model Post {
   title           String
   published       Boolean  @default(false)
   updatedAt       DateTime @updatedAt
-  summary         String
+  summary         String?
   slug            String?  @unique
   postContent     String
   attachmentFiles String[]
@@ -136,19 +136,19 @@ enum MemberType {
 // ################################# Project #############################
 model Project {
   id        String   @id @default(uuid())
-  customURL String   @unique
+  urlid     String?  @unique
   title     String
   summary   String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
 
-  status   ProjectStatus
+  status   ProjectStatus @default(IN_DEVELOPMENT)
   isPublic Boolean       @default(true)
 
-  basePost   Post   @relation("basePost", fields: [basePostId], references: [id])
+  basePost   Post   @relation("basePost", fields: [basePostId], references: [id], onDelete: Cascade)
   basePostId String @unique
 
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)

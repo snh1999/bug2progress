@@ -10,9 +10,13 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import {
+  ChangeMemberRoleDto,
+  CreateOrganizationDto,
+  UpdateOrganizationDto,
+} from './dto';
 import * as ORG from './permissions';
+import { MemberType } from '@prisma/client';
 
 @Injectable()
 export class OrganizationService {
@@ -35,10 +39,7 @@ export class OrganizationService {
     } catch (error) {
       new HandlePrismaDuplicateError(error, 'urlid');
     }
-    return {
-      message: 'succesfully created',
-      url: '/organization/' + org.urlid,
-    };
+    return org;
   }
 
   // ############################ view all organization ############################
@@ -78,12 +79,29 @@ export class OrganizationService {
   async viewAllMembers(orgurl: string) {
     // using another model, so we have to get the ID
     const orgId = await this.getOrgId(orgurl);
-    return await this.prisma.orgMembers.findMany({
+    return this.prisma.orgMembers.findMany({
       where: {
         organizationId: orgId,
       },
       select: {
-        user: {
+        user: true,
+        memberType: true,
+      },
+    });
+  }
+  async viewMembersByRole(orgurl: string, memberType: MemberType) {
+    const orgId = await this.getOrgId(orgurl);
+    return this.prisma.orgMembers.findMany({
+      where: {
+        organizationId: orgId,
+        memberType,
+      },
+      select: {
+        user: true,
+      },
+    });
+  }
+  /*{
           select: {
             profile: {
               select: {
@@ -94,10 +112,7 @@ export class OrganizationService {
             },
           },
         },
-        memberType: true,
-      },
-    });
-  }
+  */
   // ############################# view posts #############################
   async findPosts(orgurl: string) {
     const org = await this.prisma.organization.findUnique({
@@ -134,7 +149,7 @@ export class OrganizationService {
     // organization not found handled here
     await this.isUserAuthorized(orgurl, userid, ORG.UPDATE_PERMISSION);
     // user is authorized- update org
-    const org = await this.prisma.organization.update({
+    return this.prisma.organization.update({
       where: {
         urlid: orgurl,
       },
@@ -142,10 +157,6 @@ export class OrganizationService {
         ...updateOrganizationDto,
       },
     });
-    return {
-      message: 'updated successfully',
-      url: 'organization/' + org.urlid,
-    };
   }
 
   // ############################# delete organization (only owner can) #########################
@@ -161,132 +172,23 @@ export class OrganizationService {
       message: 'Deleted successfully',
     };
   }
-  // ############################# view all admin ############################
-  async viewAllAdmin(orgurl: string) {
-    const org = await this.prisma.organization.findUnique({
-      where: {
-        urlid: orgurl,
-      },
-      select: {
-        members: {
-          where: {
-            memberType: 'ADMIN',
-          },
-          select: {
-            user: {
-              select: {
-                profile: {
-                  select: {
-                    username: true,
-                    name: true,
-                    photo: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-    if (!org) return new NotFoundException('404 Not found');
-    return org.members;
-  }
-  // ############################# add admin (OWNER) ###########################
-  async addNewAdmin(orgurl: string, userToAdd: string, userid: string) {
-    await this.isUserAuthorized(orgurl, userid, ORG.NEW_ADMIN_PERMISSION);
-    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
-    if (!idToAdd) return new BadRequestException('Invalid username');
-    const orgId = await this.getOrgId(orgurl);
-    try {
-      const member = await this.prisma.orgMembers.update({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: idToAdd,
-          },
-        },
-        data: {
-          memberType: 'ADMIN',
-        },
-      });
-      return member;
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        throw new BadRequestException('No such member in the Organization');
-      else {
-        throw new BadRequestException(error.message);
-      }
-    }
-  }
-  // ############################# remove admin (ADMIN) ###########################
-  async removeAdmin(orgurl: string, userToAdd: string, userid: string) {
-    await this.isUserAuthorized(orgurl, userid, ORG.REMOVE_ADMIN_PERMISSION);
-    return await this.changeToMember(orgurl, userToAdd);
-  }
 
-  async changeToMember(orgurl: string, userToAdd: string) {
-    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
-    if (!idToAdd) return new BadRequestException('Invalid username');
-    const orgId = await this.getOrgId(orgurl);
-    try {
-      const member = await this.prisma.orgMembers.update({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: idToAdd,
-          },
-        },
-        data: {
-          memberType: 'MEMBER',
-        },
-      });
-      return member;
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        throw new BadRequestException('No such admin in the Organization');
-      else {
-        throw new BadRequestException(error.message);
-      }
-    }
-  }
+  async changeMemberRole(
+    orgurl: string,
+    dto: ChangeMemberRoleDto,
+    userid: string,
+  ) {
+    if (dto.role == 'ADMIN')
+      await this.isUserAuthorized(orgurl, userid, ORG.ADMIN_PERMISSION);
+    else if (dto.role == 'MODERATOR')
+      await this.isUserAuthorized(orgurl, userid, ORG.MODERATOR_PERMISSION);
 
-  // ############################# view all moderator ############################
-  async viewAllModerator(orgurl: string) {
-    const org = await this.prisma.organization.findUnique({
-      where: {
-        urlid: orgurl,
-      },
-      select: {
-        members: {
-          where: {
-            memberType: 'MODERATOR',
-          },
-          select: {
-            user: {
-              select: {
-                profile: {
-                  select: {
-                    username: true,
-                    name: true,
-                    photo: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-    return org.members;
-  }
-  // ############################# add moderator ###########################
-  async addNewModerator(orgurl: string, userToAdd: string, userid: string) {
-    await this.isUserAuthorized(orgurl, userid, ORG.NEW_MODERATOR_PERMISSION);
-    const idToAdd = await this.userService.getIdFromUsername(userToAdd);
-    if (!idToAdd) return new BadRequestException('Invalid username');
+    const idToAdd = await this.userService.getIdFromUsername(dto.userName);
+    if (!idToAdd) return new NotFoundException('Invalid username');
     const orgId = await this.getOrgId(orgurl);
+
     try {
-      const member = await this.prisma.orgMembers.update({
+      return this.prisma.orgMembers.update({
         where: {
           organizationId_userId: {
             organizationId: orgId,
@@ -294,26 +196,12 @@ export class OrganizationService {
           },
         },
         data: {
-          memberType: 'MODERATOR',
+          memberType: dto.role,
         },
       });
-      return member;
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        throw new BadRequestException('No such member in the Organization');
-      else {
-        throw new BadRequestException(error.message);
-      }
+      throw new BadRequestException(error.message);
     }
-  }
-  // ############################# remove moderator ########################
-  async removeModerator(orgurl: string, userToAdd: string, userid: string) {
-    await this.isUserAuthorized(
-      orgurl,
-      userid,
-      ORG.REMOVE_MODERATOR_PERMISSION,
-    );
-    return await this.changeToMember(orgurl, userToAdd);
   }
 
   // ############################# join organization ##########################
@@ -342,7 +230,7 @@ export class OrganizationService {
   }
 
   // ############################# leave organization ##########################
-  async leaveOrganization(orgurl: string, userid: string) {
+  async removeMember(orgurl: string, userid: string) {
     const organizationId = await this.getOrgId(orgurl);
     try {
       await this.prisma.orgMembers.delete({
@@ -354,40 +242,18 @@ export class OrganizationService {
         },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new BadRequestException('User is not a member of organization');
-      }
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException(error.message);
     }
     return {
-      message: 'Left Organization successfully',
+      message: 'User No longer part of Organization',
     };
   }
   // ############################# remove member (by admin/moderator) ##########################
-  async removeMember(orgid: string, userToRemove: string, userid: string) {
-    await this.isUserAuthorized(orgid, userid, ORG.REMOVE_MEMBER_PERMISSION);
+  async removeMemberBy(orgurl: string, userToRemove: string, userid: string) {
+    await this.isUserAuthorized(orgurl, userid, ORG.REMOVE_MEMBER_PERMISSION);
 
     const idToRemove = await this.userService.getIdFromUsername(userToRemove);
-    const organizationId = await this.getOrgId(orgid);
-    try {
-      await this.prisma.orgMembers.delete({
-        where: {
-          organizationId_userId: {
-            organizationId: organizationId,
-            userId: idToRemove,
-          },
-        },
-      });
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Somthing went wrong, couldnot remove user',
-      );
-    }
-    // remove admin/moderator as well
-
-    return {
-      message: 'Removed User successfully',
-    };
+    return this.removeMember(orgurl, idToRemove);
   }
 
   // ############################# find id from url ##########################
@@ -412,7 +278,7 @@ export class OrganizationService {
   }
 
   // ############################# helper functions ##########################
-  async getModeratorIds(orgurl: string) {
+  async getMemberIdsByRole(orgurl: string, memberType: MemberType) {
     const orgRoles = await this.prisma.organization.findUnique({
       where: {
         urlid: orgurl,
@@ -420,25 +286,7 @@ export class OrganizationService {
       select: {
         members: {
           where: {
-            memberType: 'MODERATOR',
-          },
-        },
-      },
-    });
-    return orgRoles.members;
-  }
-  async getAdminIds(orgurl: string) {
-    const orgRoles = await this.prisma.organization.findUnique({
-      where: {
-        urlid: orgurl,
-      },
-      select: {
-        members: {
-          where: {
-            memberType: 'ADMIN',
-          },
-          select: {
-            userId: true,
+            memberType,
           },
         },
       },
@@ -466,11 +314,14 @@ export class OrganizationService {
   async isUserAuthorized(orgurl, userid, authorizedPerson?: ORG.OrgRoles) {
     if (userid == (await this.getOwnerId(orgurl))) return;
     else if (authorizedPerson == ORG.OrgRoles.ADMIN) {
-      const adminObj = await this.getAdminIds(orgurl);
+      const adminObj = await this.getMemberIdsByRole(orgurl, MemberType.ADMIN);
       if (this.checkElementAtObj(adminObj, userid)) return;
     } else if (authorizedPerson == ORG.OrgRoles.MODERATOR) {
-      const adminObj = await this.getAdminIds(orgurl);
-      const modObj = await this.getAdminIds(orgurl);
+      const adminObj = await this.getMemberIdsByRole(orgurl, MemberType.ADMIN);
+      const modObj = await this.getMemberIdsByRole(
+        orgurl,
+        MemberType.MODERATOR,
+      );
       if (
         this.checkElementAtObj(adminObj, userid) ||
         this.checkElementAtObj(modObj, userid)

@@ -24,16 +24,13 @@ model User {
   passwordTokenExpiry DateTime?
   profile             Profile?
   posts               Post[]
-  // ownedOrganization   Organization  @relation("admin")
-  // Organization        Organization  @relation("moderator")
-  // Project             Project[]
   postComment         PostComment[]
   ticketComment       TicketComment[]
-  ticketCreator       TicketRoles?       @relation("creator")
-  ticketVarifier      TicketRoles?       @relation("varifier")
-  ticketCloser        TicketRoles?       @relation("closer")
-  ticketAssigner      TicketRoles?       @relation("assign")
-  developerTicket     TicketRoles?       @relation("developer")
+  ticketCreator       TicketRoles[]      @relation("creator")
+  ticketVarifier      TicketRoles[]      @relation("varifier")
+  ticketCloser        TicketRoles[]      @relation("closer")
+  ticketAssigner      TicketRoles[]      @relation("assign")
+  developerTicket     TicketRoles[]      @relation("developer")
   projectXFeatures    ProjectXFeatures[]
 
   orgOwned  Organization[]
@@ -77,7 +74,7 @@ model Post {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId String
 
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   organizationId String?
 
   refProject   Project? @relation(fields: [refProjectId], references: [id])
@@ -164,7 +161,7 @@ model Project {
   post             Post[]
   projectXFeatures ProjectXFeatures[]
   ticket           Ticket[]
-  Manager          ProjectContributor[]
+  members          ProjectContributor[]
 }
 
 enum ProjectStatus {
@@ -200,11 +197,11 @@ model Features {
   title            String
   description      String
   necessaryLinks   String[]
-  process          String
+  process          String?
   isPublic         Boolean            @default(true)
   projectXFeatures ProjectXFeatures[]
 
-  basePost Post   @relation(fields: [postId], references: [id])
+  basePost Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId   String @unique
 }
 
@@ -307,24 +304,22 @@ enum TicketPriority {
 }
 
 model TicketRoles {
-  id String @id @default(uuid())
-
   // status - closed_at = closed, varified_by = waiting for varification
   ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  ticketId String @unique
+  ticketId String @id
 
   creator   User   @relation("creator", fields: [creatorId], references: [id])
-  creatorId String @unique
+  creatorId String
 
   varifiedBy User?   @relation("varifier", fields: [varifierId], references: [id]) // (admin| manager| owner) - either varify/ close
-  varifierId String? @unique
+  varifierId String?
 
   closedBy User?   @relation("closer", fields: [closeId], references: [id]) // (admin| manager| owner)
-  closeId  String? @unique
+  closeId  String?
 
   assignedBy User?   @relation("assign", fields: [assignedId], references: [id]) // (admin| manager| owner)
-  assignedId String? @unique
+  assignedId String?
 
   assignedTo  User?   @relation("developer", fields: [developerId], references: [id]) // (admin| manager| owner)
-  developerId String? @unique
+  developerId String?
 }

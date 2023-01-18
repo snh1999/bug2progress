@@ -1,3 +1,3 @@
-export * from './create-organization.dto';
-export * from './update-organization.dto';
-export * from './add-user.dto';
+export * from './organization-create.dto';
+export * from './organization-update.dto';
+export * from './org-member.dto';

@@ -9,8 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { PostCommentService } from './post-comment.service';
-import { CreatePostCommentDto } from './dto/create-post-comment.dto';
-import { UpdatePostCommentDto } from './dto/update-post-comment.dto';
+import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
 import { GetUser } from 'src/common/decorator';
 import { JwtAuthGuard } from 'src/common/guard';
 

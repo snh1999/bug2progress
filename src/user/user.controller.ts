@@ -17,7 +17,7 @@ import { JwtAuthGuard, RolesGuard } from '../common/guard';
 import { Role } from '../common/dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller()
+@Controller('user')
 export class UserController {
   constructor(
     private userService: UserService,
@@ -27,7 +27,7 @@ export class UserController {
   // pagination maybe
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @Get('user')
+  @Get()
   findAll() {
     return this.userService.findAll();
   }
@@ -35,22 +35,22 @@ export class UserController {
 
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @Delete('u/:username')
+  @Delete(':username')
   deleteUser(@Param('username') username: string) {
     return this.userService.deleteUser(username);
   }
 
-  @Get('u/me')
+  @Get('me')
   getMyProfile(@GetUser('id') userId: string) {
     return this.profileService.getMyProfile(userId);
   }
 
-  @Patch('u/me')
+  @Patch('me')
   editMyProfile(@GetUser('id') userid: string, @Body() dto: EditProfileDto) {
     return this.profileService.editMyProfile(userid, dto);
   }
 
-  @Post('u/me/delete')
+  @Post('me/delete')
   deleteMyProfile(
     @GetUser('id') userId: string,
     @Body() dto: InputPasswordDto,
@@ -58,7 +58,7 @@ export class UserController {
     return this.userService.deleteMyProfile(userId, dto.password);
   }
 
-  @Post('u/me/deactivate')
+  @Post('me/deactivate')
   deactivateMyProfile(
     @GetUser('id') userId: string,
     @Body() dto: InputPasswordDto,
@@ -67,8 +67,8 @@ export class UserController {
   }
 
   @Public()
-  @Get('u/:username')
-  viewUserProfile(@Param('username') username: string) {
-    return this.profileService.viewUserProfile(username);
+  @Get(':username')
+  viewProfile(@Param('username') username: string) {
+    return this.profileService.viewProfile(username);
   }
 }

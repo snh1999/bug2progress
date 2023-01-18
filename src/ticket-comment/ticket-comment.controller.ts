@@ -1,34 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TicketCommentService } from './ticket-comment.service';
-import { CreateTicketCommentDto } from './dto/create-ticket-comment.dto';
-import { UpdateTicketCommentDto } from './dto/update-ticket-comment.dto';
+import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
+import { GetUser } from 'src/common/decorator';
 
-@Controller('ticket-comment')
+@Controller('ticket/comment/:ticketid')
 export class TicketCommentController {
   constructor(private readonly ticketCommentService: TicketCommentService) {}
 
   @Post()
-  create(@Body() createTicketCommentDto: CreateTicketCommentDto) {
-    return this.ticketCommentService.create(createTicketCommentDto);
+  create(
+    @Param('ticketid') ticketid: string,
+    @Body() dto: CreateTicketCommentDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketCommentService.create(ticketid, dto, userid);
   }
 
   @Get()
-  findAll() {
-    return this.ticketCommentService.findAll();
+  findAll(@Param('ticketid') ticketid: string) {
+    return this.ticketCommentService.findAll(ticketid);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.ticketCommentService.findOne(+id);
+    return this.ticketCommentService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTicketCommentDto: UpdateTicketCommentDto) {
-    return this.ticketCommentService.update(+id, updateTicketCommentDto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateTicketCommentDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketCommentService.update(id, dto, userid);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ticketCommentService.remove(+id);
+  remove(@Param('id') id: string, @GetUser('id') userid: string) {
+    return this.ticketCommentService.remove(id, userid);
   }
 }

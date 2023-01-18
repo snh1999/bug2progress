@@ -11,12 +11,13 @@ import {
 import { OrganizationService } from './organization.service';
 import {
   CreateOrganizationDto,
-  RemoveUserDto,
   UpdateOrganizationDto,
+  OrgMembersDto,
+  OrgMemberRoleDto,
+  ChangeMemberRoleDto,
 } from './dto';
 import { JwtAuthGuard } from '../common/guard';
 import { GetUser, Public } from '../common/decorator';
-import { AddUserDto } from './dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('organization')
@@ -39,21 +40,18 @@ export class OrganizationController {
   }
 
   // ############################ Get all member, Remove existing ##############################
+  // TODO - TEST
   @Get(':orgid/members')
-  viewAllMembers(@Param('orgid') orgid: string) {
+  viewAllMembers(
+    @Param('orgid') orgid: string,
+    @Body() dto?: OrgMemberRoleDto, // admin/moderator
+  ) {
+    if (dto) return this.organizationService.viewMembersByRole(orgid, dto.role);
     return this.organizationService.viewAllMembers(orgid);
   }
 
-  @Delete(':orgid/members')
-  removeMember(
-    @Param('orgid') orgid: string,
-    @Body() dto: RemoveUserDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.organizationService.removeMember(orgid, dto.userName, userid);
-  }
-
-  @Get(':orgid/join')
+  // create new entry at membership table
+  @Post(':orgid/members')
   joinOrganization(
     @Param('orgid') orgid: string,
     @GetUser('id') userid: string,
@@ -61,65 +59,32 @@ export class OrganizationController {
     return this.organizationService.joinOrganization(orgid, userid);
   }
 
-  @Get(':orgid/leave')
-  leaveOrganization(
+  // TODO - TEST
+  // user - moderator/admin
+  // admin - user/moderator
+  @Patch(':orgid/members')
+  changeMemberRole(
     @Param('orgid') orgid: string,
+    @Body() dto: ChangeMemberRoleDto,
     @GetUser('id') userid: string,
   ) {
-    return this.organizationService.leaveOrganization(orgid, userid);
-  }
-  // ############################ Get all admin, Add new, Remove existing ##############################
-  @Get(':orgid/admin')
-  viewAllAdmin(@Param('orgid') orgid: string) {
-    return this.organizationService.viewAllAdmin(orgid);
+    return this.organizationService.changeMemberRole(orgid, dto, userid);
   }
 
-  @Post(':orgid/admin')
-  addNewAdmin(
+  // TODO - TEST
+  @Delete(':orgid/members')
+  removeMember(
     @Param('orgid') orgid: string,
-    @Body() dto: AddUserDto,
     @GetUser('id') userid: string,
+    @Body() dto?: OrgMembersDto,
   ) {
-    return this.organizationService.addNewAdmin(orgid, dto.userName, userid);
-  }
-
-  @Delete(':orgid/admin')
-  removeAdmin(
-    @Param('orgid') orgid: string,
-    @Body() dto: AddUserDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.organizationService.removeAdmin(orgid, dto.userName, userid);
-  }
-  // ############################ Get all admin, Add new, Remove existing ##############################
-  @Get(':orgid/moderator')
-  viewAllModerators(@Param('orgid') orgid: string) {
-    return this.organizationService.viewAllModerator(orgid);
-  }
-
-  @Post(':orgid/moderator')
-  addNewModerators(
-    @Param('orgid') orgid: string,
-    @Body() dto: AddUserDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.organizationService.addNewModerator(
-      orgid,
-      dto.userName,
-      userid,
-    );
-  }
-  @Delete(':orgid/moderator')
-  removeModerator(
-    @Param('orgid') orgid: string,
-    @Body() dto: AddUserDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.organizationService.removeModerator(
-      orgid,
-      dto.userName,
-      userid,
-    );
+    if (dto)
+      return this.organizationService.removeMemberBy(
+        orgid,
+        dto.userName,
+        userid,
+      );
+    return this.organizationService.removeMember(orgid, userid);
   }
 
   // ############################ Get all posts, projects, organization page ##############################
@@ -138,7 +103,6 @@ export class OrganizationController {
   findOne(@Param('orgid') orgid: string) {
     return this.organizationService.findOne(orgid);
   }
-
   // ############################ Get edit, delete ##############################
   // check admin later
   @Patch(':orgid')

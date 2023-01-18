@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PostService } from 'src/post/post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreatePostCommentDto } from './dto/create-post-comment.dto';
-import { UpdatePostCommentDto } from './dto/update-post-comment.dto';
+import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
 
 @Injectable()
 export class PostCommentService {
@@ -13,21 +12,19 @@ export class PostCommentService {
 
   // check if post is public or user is author (separate function)
   // comment reply
+
+  // TODO- check postid at frontend?
   async create(postid: string, dto: CreatePostCommentDto, userid: string) {
     // parent post = post id from param
     const post = await this.postService.findOne(postid);
-    console.log('here');
     // author comes from @GetUser and text contained in dto
-    await this.prisma.postComment.create({
+    return await this.prisma.postComment.create({
       data: {
         ...dto,
         parentPostId: post.id,
         authorId: userid,
       },
     });
-    return {
-      message: 'Posted successfully',
-    };
   }
 
   async findAll(postid: string) {
@@ -48,7 +45,7 @@ export class PostCommentService {
   }
 
   async update(id: string, dto: UpdatePostCommentDto, userid: string) {
-    await this.prisma.postComment.updateMany({
+    return await this.prisma.postComment.updateMany({
       where: {
         id,
         authorId: userid,
@@ -57,9 +54,6 @@ export class PostCommentService {
         ...dto,
       },
     });
-    return {
-      message: 'updated successfully',
-    };
   }
 
   async remove(id: string, userid: string) {
@@ -70,7 +64,7 @@ export class PostCommentService {
       },
     });
     return {
-      message: 'updated successfully',
+      message: 'deleted successfully',
     };
   }
 }

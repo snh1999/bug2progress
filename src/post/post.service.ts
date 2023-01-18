@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { OrganizationService } from 'src/organization/organization.service';
@@ -13,6 +17,7 @@ export class PostService {
     private orgService: OrganizationService,
   ) {}
 
+  // TODO- check orgid at frontend?
   async create(dto: CreatePostDto, userId: string) {
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
@@ -35,23 +40,19 @@ export class PostService {
     }
 
     // no slug? make it same as id
-    if (!post.slug) this.update(post.id, { slug: post.id }, userId);
-    return {
-      message: 'created successfully',
-      url: '/post/' + post.id,
-      postid: post.id,
-    };
+    if (!post.slug) await this.update(post.id, { slug: post.id }, userId);
+    return post;
   }
 
   // send not more than 10
   async findAll(userid?: string) {
     if (userid)
-      return await this.prisma.post.findMany({
+      return this.prisma.post.findMany({
         where: {
           authorId: userid,
         },
       });
-    return await this.prisma.post.findMany({});
+    return this.prisma.post.findMany({});
   }
 
   async findOne(id: string) {
@@ -79,13 +80,14 @@ export class PostService {
     return post;
   }
 
+  // TODO- check orgid at frontend?
   async update(id: string, dto: UpdatePostDto, userid: string) {
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }
     const post = await this.findOne(id);
 
-    await this.prisma.post.updateMany({
+    return this.prisma.post.updateMany({
       where: {
         id: post.id,
         authorId: userid,
@@ -94,33 +96,31 @@ export class PostService {
         ...dto,
       },
     });
-    return {
-      message: 'updated successfully',
-      url: '/post/' + post.id,
-    };
   }
 
   async remove(id: string, userid: string) {
     const post = await this.findOne(id);
 
-    await this.prisma.post.deleteMany({
+    const deleted = await this.prisma.post.deleteMany({
       where: {
         id: post.id,
         authorId: userid,
       },
     });
-    return {
-      message: 'removed successfully',
-    };
+    if (deleted.count == 1)
+      return {
+        message: 'removed successfully',
+      };
+    else throw new InternalServerErrorException('Something went wrong');
   }
 
   // ########################### helper function #################
 
-  async createBasePost(userId: string, title: string, summary: string) {
-    return await this.prisma.post.create({
+  async createBasePost(userId: string, title: string) {
+    return this.prisma.post.create({
       data: {
         title,
-        postContent: 'This post is automatically genereted.' + summary,
+        postContent: 'This post is automatically genereted.',
         authorId: userId,
       },
     });

@@ -1,26 +1,100 @@
-import { Injectable } from '@nestjs/common';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { UpdateTicketDto } from './dto/update-ticket.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ProjectService } from 'src/project/project.service';
+import { CreateTicketDto, UpdateTicketDto, TicketRoles } from './dto';
 
 @Injectable()
 export class TicketService {
-  create(createTicketDto: CreateTicketDto) {
-    return 'This action adds a new ticket';
+  constructor(
+    private prisma: PrismaService,
+    private projectService: ProjectService,
+  ) {}
+  async create(dto: CreateTicketDto, userid: string) {
+    // create ticket
+    if (dto.projectId) {
+      const project = await this.projectService.findOne(dto.projectId);
+      dto.projectId = project.id;
+    }
+    // check feature x project
+
+    // create ticket
+    const ticket = await this.prisma.ticket.create({
+      data: {
+        ...dto,
+      },
+    });
+
+    // create ticketroles
+    try {
+      await this.prisma.ticketRoles.create({
+        data: {
+          ticketId: ticket.id,
+          creatorId: userid,
+        },
+      });
+    } catch (error) {
+      // delete
+      await this.remove(ticket.id);
+      throw new InternalServerErrorException('Couldnot create ticket');
+    }
+    return ticket;
   }
 
-  findAll() {
-    return `This action returns all ticket`;
+  async findAll(projectId: string) {
+    return await this.prisma.ticket.findMany({
+      where: {
+        projectId: projectId,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ticket`;
+  async findOne(id: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        ticketRoles: true,
+      },
+    });
+    if (!ticket) throw new NotFoundException('404 not found');
+    return ticket;
   }
 
-  update(id: number, updateTicketDto: UpdateTicketDto) {
-    return `This action updates a #${id} ticket`;
+  async update(id: string, dto: UpdateTicketDto) {
+    return await this.prisma.ticket.update({
+      where: {
+        id,
+      },
+      data: {
+        ...dto,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ticket`;
+  async updateRoles(id: string, dto: TicketRoles) {
+    return await this.prisma.ticketRoles.update({
+      where: {
+        ticketId: id,
+      },
+      data: {
+        ...dto,
+      },
+    });
+  }
+
+  async remove(id: string) {
+    await this.prisma.ticket.delete({
+      where: {
+        id,
+      },
+    });
+    return {
+      message: 'delete successful',
+    };
   }
 }

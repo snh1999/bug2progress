@@ -7,6 +7,7 @@ import { PostModule } from 'src/post/post.module';
 @Module({
   controllers: [ProjectController],
   providers: [ProjectService],
+  exports: [ProjectService],
   imports: [OrganizationModule, PostModule],
 })
 export class ProjectModule {}

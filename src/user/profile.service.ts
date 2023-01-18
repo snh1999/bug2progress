@@ -18,7 +18,7 @@ export class ProfileService {
     return await this.returnProfile(userId, true);
   }
   // ######################## view profile #############################
-  async viewUserProfile(username: string) {
+  async viewProfile(username: string) {
     const userid = await this.userService.getIdFromUsername(username);
     return await this.returnProfile(userid, false);
   }
@@ -30,7 +30,7 @@ export class ProfileService {
       delete dto.email;
     }
     // update profile
-    await this.prisma.profile.update({
+    return await this.prisma.profile.update({
       where: {
         userId: userId,
       },
@@ -66,7 +66,7 @@ export class ProfileService {
         ...user,
       };
     } else {
-      throw new NotFoundException('Resource not found');
+      throw new NotFoundException('404 not found');
     }
   }
 

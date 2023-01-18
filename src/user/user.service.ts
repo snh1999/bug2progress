@@ -19,6 +19,7 @@ export class UserService {
     // check if user password is correct
     if (!(await this.checkPassword(userId, password)))
       throw new ForbiddenException('Please input correct password');
+
     // passwordchangedat modified to invalidate the token
     await this.prisma.user.update({
       where: { id: userId },
@@ -39,7 +40,6 @@ export class UserService {
     await this.prisma.user.delete({
       where: { id: userId },
     });
-    // logout
   }
 
   // ########################## delete user(ADMIN) ##############################
@@ -67,12 +67,7 @@ export class UserService {
 
   // ########################## view all user(ADMIN) ##############################
   async findAll() {
-    const user = await this.prisma.user.findMany({
-      include: { profile: true },
-    });
-    return {
-      ...user,
-    };
+    return await this.prisma.user.findMany({});
   }
   // ########################## helper functions ################################
   async checkPassword(userId: string, password: string) {
@@ -85,15 +80,6 @@ export class UserService {
     }
     return true;
   }
-
-  // async getUserById(userId: string) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: {
-  //       id: userId,
-  //     },
-  //   });
-  //   return user;
-  // }
 
   async updateEmail(userId: string, email: string) {
     try {

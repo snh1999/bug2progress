@@ -1,26 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTicketCommentDto } from './dto/create-ticket-comment.dto';
-import { UpdateTicketCommentDto } from './dto/update-ticket-comment.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
 
 @Injectable()
 export class TicketCommentService {
-  create(createTicketCommentDto: CreateTicketCommentDto) {
-    return 'This action adds a new ticketComment';
+  constructor(private prisma: PrismaService) {}
+
+  // check if ticketid is valid @ frontend
+  async create(ticketid: string, dto: CreateTicketCommentDto, userid: string) {
+    // author comes from @GetUser and text contained in dto
+    return await this.prisma.ticketComment.create({
+      data: {
+        ...dto,
+        parentTicketId: ticketid,
+        authorId: userid,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all ticketComment`;
+  async findAll(ticketid: string) {
+    return await this.prisma.ticketComment.findMany({
+      where: {
+        parentTicketId: ticketid,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ticketComment`;
+  async findOne(id: string) {
+    return await this.prisma.ticketComment.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateTicketCommentDto: UpdateTicketCommentDto) {
-    return `This action updates a #${id} ticketComment`;
+  async update(id: string, dto: UpdateTicketCommentDto, userid: string) {
+    return await this.prisma.ticketComment.updateMany({
+      where: {
+        id,
+        authorId: userid,
+      },
+      data: {
+        ...dto,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ticketComment`;
+  async remove(id: string, userid: string) {
+    await this.prisma.ticketComment.deleteMany({
+      where: {
+        id,
+        authorId: userid,
+      },
+    });
+    return {
+      message: 'updated successfully',
+    };
   }
 }

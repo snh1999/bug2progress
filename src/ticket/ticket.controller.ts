@@ -1,34 +1,55 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { TicketService } from './ticket.service';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { UpdateTicketDto } from './dto/update-ticket.dto';
+import { CreateTicketDto, UpdateTicketDto, TicketRoles } from './dto';
+import { GetUser } from 'src/common/decorator';
 
 @Controller('ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Post()
-  create(@Body() createTicketDto: CreateTicketDto) {
-    return this.ticketService.create(createTicketDto);
+  create(@Body() dto: CreateTicketDto, @GetUser('id') userid: string) {
+    return this.ticketService.create(dto, userid);
   }
 
   @Get()
-  findAll() {
-    return this.ticketService.findAll();
+  findAll(@Body() dto: { projectId: string }) {
+    return this.ticketService.findAll(dto.projectId);
   }
 
+  // view roles as  well
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.ticketService.findOne(+id);
+    return this.ticketService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto) {
-    return this.ticketService.update(+id, updateTicketDto);
+    return this.ticketService.update(id, updateTicketDto);
+  }
+
+  @Patch(':id/roles')
+  updateRoles(@Param('id') id: string, @Body() dto: TicketRoles) {
+    return this.ticketService.updateRoles(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.ticketService.remove(+id);
+    return this.ticketService.remove(id);
   }
 }
+
+// assigned to me
+// by me (author)
+// ticket roles // update roles
+
+// pending verification (later) - by project
+// no varified by

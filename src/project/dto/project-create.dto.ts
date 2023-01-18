@@ -6,15 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-
-enum ProjectStatus {
-  PROPOSED,
-  IN_DEVELOPMENT,
-  ACTIVE,
-  MAINTAINED,
-  NOT_MAINTAINED,
-  OBSOLETE,
-}
+import { ProjectStatus } from '@prisma/client';
 export class CreateProjectDto {
   @IsAlphanumeric()
   @IsNotEmpty()
@@ -37,7 +29,7 @@ export class CreateProjectDto {
   @IsOptional()
   isPublic?: boolean;
 
-  // @IsEnum(ProjectStatus)
-  // @IsOptional()
-  // status?: ProjectStatus;
+  @IsEnum(ProjectStatus)
+  @IsOptional()
+  status?: ProjectStatus;
 }

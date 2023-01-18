@@ -11,6 +11,7 @@ import { ProjectModule } from './project/project.module';
 import { TicketModule } from './ticket/ticket.module';
 import { PostCommentModule } from './post-comment/post-comment.module';
 import { TicketCommentModule } from './ticket-comment/ticket-comment.module';
+import { FeatureModule } from './feature/feature.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TicketCommentModule } from './ticket-comment/ticket-comment.module';
     TicketModule,
     PostCommentModule,
     TicketCommentModule,
+    FeatureModule,
   ],
   providers: [
     {

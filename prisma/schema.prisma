@@ -26,7 +26,7 @@ model User {
   posts               Post[]
   postComment         PostComment[]
   ticketComment       TicketComment[]
-  ticketCreator       TicketRoles[]      @relation("creator")
+  ticketCreator       Ticket[]
   ticketVarifier      TicketRoles[]      @relation("varifier")
   ticketCloser        TicketRoles[]      @relation("closer")
   ticketAssigner      TicketRoles[]      @relation("assign")
@@ -187,6 +187,7 @@ model ProjectContributor {
 
 enum ProjectRole {
   MANAGER
+  LEAD
   DEVELOPER
 }
 
@@ -224,6 +225,7 @@ enum FeatureType {
   ACTIVE
   DEPRICATED
   OBSOLETE
+  PROPOSED
 }
 
 // ################################# Comment #############################
@@ -263,15 +265,16 @@ model TicketComment {
 // ################################# Ticket #############################
 
 model Ticket {
-  id             String         @id @default(uuid())
-  title          String
-  description    String
-  createdAt      DateTime       @default(now())
-  closedAt       DateTime?
-  updatedAt      DateTime       @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  creator     User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
+
   ticketType     TicketType
-  ticketSeverity TicketSeverity
-  ticketPriority TicketPriority
+  ticketSeverity TicketSeverity?
+  ticketPriority TicketPriority?
 
   project                    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId                  String
@@ -303,23 +306,33 @@ enum TicketPriority {
   LOW
 }
 
+enum TicketStatus {
+  PENDING
+  VERIFIED // varified at has something
+  ASSIGNED // assigned at has value
+  PENDING_CLOSE // developer ask for that 
+  CLOSED // closed at has value
+}
+
 model TicketRoles {
   // status - closed_at = closed, varified_by = waiting for varification
-  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  ticketId String @id
+  ticket       Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId     String       @id
+  ticketStatus TicketStatus @default(PENDING)
+  updatedAt    DateTime     @updatedAt
 
-  creator   User   @relation("creator", fields: [creatorId], references: [id])
-  creatorId String
-
-  varifiedBy User?   @relation("varifier", fields: [varifierId], references: [id]) // (admin| manager| owner) - either varify/ close
+  varifiedBy User?     @relation("varifier", fields: [varifierId], references: [id]) // (admin| manager| owner) - either varify/ close
   varifierId String?
+  varifiedAt DateTime?
 
-  closedBy User?   @relation("closer", fields: [closeId], references: [id]) // (admin| manager| owner)
+  closedBy User?     @relation("closer", fields: [closeId], references: [id]) // (admin| manager| owner)
   closeId  String?
+  closedAt DateTime?
 
-  assignedBy User?   @relation("assign", fields: [assignedId], references: [id]) // (admin| manager| owner)
-  assignedId String?
+  assignedBy   User?   @relation("assign", fields: [assignedbyId], references: [id]) // (admin| manager| owner)
+  assignedbyId String?
 
-  assignedTo  User?   @relation("developer", fields: [developerId], references: [id]) // (admin| manager| owner)
-  developerId String?
+  developer    User?     @relation("developer", fields: [developerId], references: [id]) // (admin| manager| owner)
+  developerId  String?
+  assignedToAt DateTime?
 }

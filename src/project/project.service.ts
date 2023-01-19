@@ -1,11 +1,11 @@
 import {
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Project } from '@prisma/client';
+import { Project, ProjectRole } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { TicketService } from 'src/ticket/ticket.service';
 import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { OrganizationService } from '../organization/organization.service';
 import { PostService } from '../post/post.service';
@@ -19,6 +19,12 @@ import {
   DeleteContributorDto,
 } from './dto';
 
+import {
+  TicketEnumDto,
+  UpdateStatusDto,
+  TicketAssignDto,
+} from 'src/ticket/dto';
+
 @Injectable()
 export class ProjectService {
   constructor(
@@ -26,6 +32,7 @@ export class ProjectService {
     private orgService: OrganizationService,
     private postService: PostService,
     private userService: UserService,
+    private ticketService: TicketService,
   ) {}
   // TODO - add featureXproject
 
@@ -47,7 +54,7 @@ export class ProjectService {
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError)
-        this.postService.remove(post.id, userId);
+        await this.postService.remove(post.id, userId);
       new HandlePrismaDuplicateError(error, 'urlid');
     }
 
@@ -87,7 +94,7 @@ export class ProjectService {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }
     const project = await this.findOne(id);
-    return await this.prisma.project.updateMany({
+    return this.prisma.project.updateMany({
       where: {
         AND: [{ id: project.id }, { ownerId: userid }],
       },
@@ -116,9 +123,15 @@ export class ProjectService {
     };
   }
 
-  async findContributor(url: string) {
+  async findContributor(url: string, role?: ProjectRole) {
     const project = await this.findOne(url);
-    return await this.prisma.projectContributor.findMany({
+    if (role)
+      return this.prisma.projectContributor.findMany({
+        where: {
+          AND: [{ projectId: project.id }, { role }],
+        },
+      });
+    return this.prisma.projectContributor.findMany({
       where: {
         projectId: project.id,
       },
@@ -136,7 +149,7 @@ export class ProjectService {
     if (project.ownerId != userid)
       throw new UnauthorizedException('You are not authorized for the action');
 
-    return await this.prisma.projectContributor.create({
+    return this.prisma.projectContributor.create({
       data: {
         userId: idtoadd,
         projectId: project.id,
@@ -190,5 +203,40 @@ export class ProjectService {
     return {
       message: 'Delete successful',
     };
+  }
+
+  async findAllTickets(id: string) {
+    return this.ticketService.findAll(id);
+  }
+
+  async updateTicket(
+    id: string,
+    ticketid: string,
+    dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
+    userId: string,
+  ) {
+    // check user role (if authorized)
+    // if owner
+    const project = await this.findOne(id);
+    const userRole = await this.prisma.projectContributor.findFirst({
+      where: {
+        AND: [{ projectId: project.id }, { userId }],
+      },
+    });
+    if (dto instanceof UpdateStatusDto && dto.ticketStatus == 'PENDING_CLOSE')
+      await this.ticketService.updateStatus(ticketid, dto, userId);
+    // user is not lead/manager or owner
+    if (!(project.ownerId == userId || userRole.role != 'DEVELOPER'))
+      throw new UnauthorizedException('You are not owner or manager');
+
+    // update role
+    if (dto instanceof UpdateStatusDto)
+      return this.ticketService.updateStatus(ticketid, dto, userId);
+    else if (dto instanceof TicketAssignDto) {
+      const idToAssign = await this.userService.getIdFromUsername(dto.username);
+      return this.ticketService.assignTicket(ticketid, idToAssign, userId);
+    } else if (dto instanceof TicketEnumDto) {
+      return this.ticketService.verifyTicket(ticketid, dto, userId);
+    }
   }
 }

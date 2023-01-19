@@ -93,8 +93,7 @@ export class OrganizationService {
     const orgId = await this.getOrgId(orgurl);
     return this.prisma.orgMembers.findMany({
       where: {
-        organizationId: orgId,
-        memberType,
+        AND: [{ organizationId: orgId }, { memberType }],
       },
       select: {
         user: true,

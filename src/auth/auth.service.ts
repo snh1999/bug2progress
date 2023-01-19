@@ -84,7 +84,7 @@ export class AuthService {
         },
       });
       // return token
-      return await this.sendCookie(res, {
+      return this.sendCookie(res, {
         id: user.id,
         name: profile.username,
         username: profile.name,
@@ -152,7 +152,7 @@ export class AuthService {
     // update password
     await this.updatePassword(user.id, password);
     // log user in(send back jwt)
-    return await this.sendCookie(res, {
+    return this.sendCookie(res, {
       id: user.id,
       username: user.profile.username,
       name: user.profile.name,
@@ -171,7 +171,7 @@ export class AuthService {
     const password = await argon.hash(dto.newPassword);
     await this.updatePassword(userId, password);
     console.log('here');
-    return await this.sendCookie(res, {
+    return this.sendCookie(res, {
       ...req['user'],
     });
   }
@@ -200,7 +200,7 @@ export class AuthService {
   }
 
   async findUserByEmail(email: string) {
-    return await this.prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { email },
       include: {
         profile: {

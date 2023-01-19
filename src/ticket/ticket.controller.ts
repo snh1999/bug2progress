@@ -8,7 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
-import { CreateTicketDto, UpdateTicketDto, TicketRoles } from './dto';
+import { CreateTicketDto, UpdateTicketDto } from './dto';
 import { GetUser } from 'src/common/decorator';
 
 @Controller('ticket')
@@ -32,18 +32,22 @@ export class TicketController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto) {
-    return this.ticketService.update(id, updateTicketDto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateTicketDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketService.update(id, dto, userid);
   }
 
-  @Patch(':id/roles')
-  updateRoles(@Param('id') id: string, @Body() dto: TicketRoles) {
-    return this.ticketService.updateRoles(id, dto);
-  }
+  // @Patch(':id/roles')
+  // updateRoles(@Param('id') id: string, @Body() dto: TicketRoles) {
+  //   return this.ticketService.updateRoles(id, dto);
+  // }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ticketService.remove(id);
+  remove(@Param('id') id: string, @GetUser('id') userid: string) {
+    return this.ticketService.remove(id, userid);
   }
 }
 

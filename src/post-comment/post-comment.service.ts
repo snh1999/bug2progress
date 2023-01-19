@@ -18,7 +18,7 @@ export class PostCommentService {
     // parent post = post id from param
     const post = await this.postService.findOne(postid);
     // author comes from @GetUser and text contained in dto
-    return await this.prisma.postComment.create({
+    return this.prisma.postComment.create({
       data: {
         ...dto,
         parentPostId: post.id,
@@ -29,7 +29,7 @@ export class PostCommentService {
 
   async findAll(postid: string) {
     const post = await this.postService.findOne(postid);
-    return await this.prisma.postComment.findMany({
+    return this.prisma.postComment.findMany({
       where: {
         parentPostId: post.id,
       },
@@ -37,7 +37,7 @@ export class PostCommentService {
   }
 
   async findOne(id: string) {
-    return await this.prisma.postComment.findUnique({
+    return this.prisma.postComment.findUnique({
       where: {
         id,
       },
@@ -47,8 +47,7 @@ export class PostCommentService {
   async update(id: string, dto: UpdatePostCommentDto, userid: string) {
     return await this.prisma.postComment.updateMany({
       where: {
-        id,
-        authorId: userid,
+        AND: [{ id }, { authorId: userid }],
       },
       data: {
         ...dto,
@@ -59,8 +58,7 @@ export class PostCommentService {
   async remove(id: string, userid: string) {
     await this.prisma.postComment.deleteMany({
       where: {
-        id,
-        authorId: userid,
+        AND: [{ id }, { authorId: userid }],
       },
     });
     return {

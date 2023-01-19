@@ -4,6 +4,7 @@ import { FeatureController } from './feature.controller';
 
 @Module({
   controllers: [FeatureController],
-  providers: [FeatureService]
+  providers: [FeatureService],
+  exports: [FeatureService],
 })
 export class FeatureModule {}

@@ -1,18 +1,33 @@
-import { IsOptional, IsString } from 'class-validator';
-export class TicketRoles {
-  @IsString()
-  @IsOptional()
-  varifierId?: string;
+import {
+  TicketType,
+  TicketSeverity,
+  TicketPriority,
+  TicketStatus,
+} from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-  @IsString()
+export class TicketEnumDto {
+  @IsEnum(TicketType)
   @IsOptional()
-  closeId?: string;
+  ticketType: TicketType;
 
-  @IsString()
-  @IsOptional()
-  assignedId?: string;
+  @IsEnum(TicketSeverity)
+  @IsNotEmpty()
+  ticketSeverity: TicketSeverity;
 
+  @IsEnum(TicketPriority)
+  @IsNotEmpty()
+  ticketPriority: TicketPriority;
+}
+
+export class TicketAssignDto {
   @IsString()
-  @IsOptional()
-  developerId?: string;
+  @IsNotEmpty()
+  username: string;
+}
+
+export class UpdateStatusDto {
+  @IsEnum(TicketStatus)
+  @IsNotEmpty()
+  ticketStatus: TicketStatus;
 }

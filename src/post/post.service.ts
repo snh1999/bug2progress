@@ -89,8 +89,7 @@ export class PostService {
 
     return this.prisma.post.updateMany({
       where: {
-        id: post.id,
-        authorId: userid,
+        AND: [{ id: post.id }, { authorId: userid }],
       },
       data: {
         ...dto,
@@ -103,8 +102,7 @@ export class PostService {
 
     const deleted = await this.prisma.post.deleteMany({
       where: {
-        id: post.id,
-        authorId: userid,
+        AND: [{ id: post.id }, { authorId: userid }],
       },
     });
     if (deleted.count == 1)

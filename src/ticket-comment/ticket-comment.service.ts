@@ -38,8 +38,7 @@ export class TicketCommentService {
   async update(id: string, dto: UpdateTicketCommentDto, userid: string) {
     return await this.prisma.ticketComment.updateMany({
       where: {
-        id,
-        authorId: userid,
+        AND: [{ id }, { authorId: userid }],
       },
       data: {
         ...dto,
@@ -50,8 +49,7 @@ export class TicketCommentService {
   async remove(id: string, userid: string) {
     await this.prisma.ticketComment.deleteMany({
       where: {
-        id,
-        authorId: userid,
+        AND: [{ id }, { authorId: userid }],
       },
     });
     return {

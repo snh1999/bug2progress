@@ -14,6 +14,7 @@ export class FeatureService {
     private postService: PostService,
     private userService: UserService,
   ) {}
+
   async create(dto: CreateFeatureDto, userId: string) {
     const post = await this.postService.createBasePost(userId, dto.title);
     let feature: Features;
@@ -26,7 +27,7 @@ export class FeatureService {
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError)
-        this.postService.remove(post.id, userId);
+        await this.postService.remove(post.id, userId);
       new HandlePrismaDuplicateError(error, 'id');
     }
     return feature;
@@ -57,10 +58,14 @@ export class FeatureService {
   async update(id: string, dto: UpdateFeatureDto, userid: string) {
     return this.prisma.features.updateMany({
       where: {
-        id: id,
-        basePost: {
-          authorId: userid,
-        },
+        AND: [
+          { id },
+          {
+            basePost: {
+              authorId: userid,
+            },
+          },
+        ],
       },
       data: {
         ...dto,

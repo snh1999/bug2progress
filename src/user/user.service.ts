@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
+// import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
 
@@ -92,7 +92,7 @@ export class UserService {
         },
       });
     } catch (error) {
-      new HandlePrismaDuplicateError(error, 'email');
+      // new HandlePrismaDuplicateError(error, 'email');
     }
   }
 }

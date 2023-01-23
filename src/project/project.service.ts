@@ -5,8 +5,7 @@ import {
 } from '@nestjs/common';
 import { Project, ProjectRole } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { TicketService } from 'src/ticket/ticket.service';
-import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
+// import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { OrganizationService } from '../organization/organization.service';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -19,12 +18,6 @@ import {
   DeleteContributorDto,
 } from './dto';
 
-import {
-  TicketEnumDto,
-  UpdateStatusDto,
-  TicketAssignDto,
-} from 'src/ticket/dto';
-
 @Injectable()
 export class ProjectService {
   constructor(
@@ -32,7 +25,6 @@ export class ProjectService {
     private orgService: OrganizationService,
     private postService: PostService,
     private userService: UserService,
-    private ticketService: TicketService,
   ) {}
   // TODO - add featureXproject
 
@@ -55,7 +47,7 @@ export class ProjectService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError)
         await this.postService.remove(post.id, userId);
-      new HandlePrismaDuplicateError(error, 'urlid');
+      // new HandlePrismaDuplicauteError(error, 'urlid');
     }
 
     return project;
@@ -203,40 +195,5 @@ export class ProjectService {
     return {
       message: 'Delete successful',
     };
-  }
-
-  async findAllTickets(id: string) {
-    return this.ticketService.findAll(id);
-  }
-
-  async updateTicket(
-    id: string,
-    ticketid: string,
-    dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
-    userId: string,
-  ) {
-    // check user role (if authorized)
-    // if owner
-    const project = await this.findOne(id);
-    const userRole = await this.prisma.projectContributor.findFirst({
-      where: {
-        AND: [{ projectId: project.id }, { userId }],
-      },
-    });
-    if (dto instanceof UpdateStatusDto && dto.ticketStatus == 'PENDING_CLOSE')
-      await this.ticketService.updateStatus(ticketid, dto, userId);
-    // user is not lead/manager or owner
-    if (!(project.ownerId == userId || userRole.role != 'DEVELOPER'))
-      throw new UnauthorizedException('You are not owner or manager');
-
-    // update role
-    if (dto instanceof UpdateStatusDto)
-      return this.ticketService.updateStatus(ticketid, dto, userId);
-    else if (dto instanceof TicketAssignDto) {
-      const idToAssign = await this.userService.getIdFromUsername(dto.username);
-      return this.ticketService.assignTicket(ticketid, idToAssign, userId);
-    } else if (dto instanceof TicketEnumDto) {
-      return this.ticketService.verifyTicket(ticketid, dto, userId);
-    }
   }
 }

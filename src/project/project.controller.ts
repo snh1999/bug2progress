@@ -81,22 +81,6 @@ export class ProjectController {
     return this.projectService.removeContributor(id, dto, userid);
   }
 
-  // ############################# Ticket ########################
-  @Get(':id/tickets')
-  findAllTickets(@Param('id') id: string) {
-    return this.projectService.findAllTickets(id);
-  }
-
-  @Patch(':id/tickets/:ticketid')
-  updateTicket(
-    @Param('id') id: string,
-    @Param('ticketid') ticketid: string,
-    @Body() dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.projectService.updateTicket(id, ticketid, dto, userid);
-  }
-
   // ############################# Features ########################
   @Get(':id/features')
   findFeatures(@Param('id') id: string) {

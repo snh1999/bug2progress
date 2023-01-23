@@ -3,12 +3,15 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { TicketStatus } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { ProjectService } from 'src/project/project.service';
+import { UserService } from 'src/user/user.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ProjectService } from '../project/project.service';
 import {
   CreateTicketDto,
+  TicketAssignDto,
   TicketEnumDto,
   UpdateStatusDto,
   UpdateTicketDto,
@@ -19,6 +22,7 @@ export class TicketService {
   constructor(
     private prisma: PrismaService,
     private projectService: ProjectService,
+    private userService: UserService,
   ) {}
   async create(dto: CreateTicketDto, userid: string) {
     // create ticket
@@ -95,6 +99,37 @@ export class TicketService {
   //     },
   //   });
   // }
+
+  async updateTicketRoles(
+    projectId: string,
+    ticketid: string,
+    dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
+    userId: string,
+  ) {
+    // check user role (if authorized)
+    // if owner
+    const project = await this.projectService.findOne(projectId);
+    const userRole = await this.prisma.projectContributor.findFirst({
+      where: {
+        AND: [{ projectId: project.id }, { userId }],
+      },
+    });
+    if (dto instanceof UpdateStatusDto && dto.ticketStatus == 'PENDING_CLOSE')
+      await this.updateStatus(ticketid, dto, userId);
+    // user is not lead/manager or owner
+    if (!(project.ownerId == userId || userRole.role != 'DEVELOPER'))
+      throw new UnauthorizedException('You are not owner or manager');
+
+    // update role
+    if (dto instanceof UpdateStatusDto)
+      return this.updateStatus(ticketid, dto, userId);
+    else if (dto instanceof TicketAssignDto) {
+      const idToAssign = await this.userService.getIdFromUsername(dto.username);
+      return this.assignTicket(ticketid, idToAssign, userId);
+    } else if (dto instanceof TicketEnumDto) {
+      return this.verifyTicket(ticketid, dto, userId);
+    }
+  }
 
   async remove(id: string, userid: string) {
     await this.prisma.ticket.deleteMany({

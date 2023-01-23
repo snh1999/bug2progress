@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Features } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
+// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
@@ -28,7 +28,7 @@ export class FeatureService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError)
         await this.postService.remove(post.id, userId);
-      new HandlePrismaDuplicateError(error, 'id');
+      // new HandlePrismaDuplicateError(error, 'id');
     }
     return feature;
   }

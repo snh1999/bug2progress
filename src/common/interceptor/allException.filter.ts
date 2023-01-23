@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
-import { PrismaClientInitializationError } from '@prisma/client/runtime';
+import {
+  PrismaClientInitializationError,
+  PrismaClientKnownRequestError,
+} from '@prisma/client/runtime';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -60,6 +63,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     this.httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
     if (exception instanceof PrismaClientInitializationError) {
       this.handlePrismaClientInitializationError();
+    } else if (exception instanceof PrismaClientKnownRequestError) {
+      this.handlePrismaClientKnownRequestError(exception);
     } else {
       this.handleUnknownServerError();
     }
@@ -68,9 +73,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     this.httpmessage = 'Internal Server Error';
     this.errorTitle = 'Database Not Connected';
   }
+
+  handlePrismaClientKnownRequestError(exception) {
+    if (exception.code == 'P2002') {
+      this.httpmessage = `Duplicate field ${exception.meta.target}`;
+      this.errorTitle = 'Database Constraint failed';
+    } else this.handleUnknownServerError();
+  }
   handleUnknownServerError() {
     this.httpmessage = 'Internal Server Error';
   }
+
   // #################################### building responses #####################
   sendDevResponse(exception: unknown) {
     // errormessage not defined, log the exception

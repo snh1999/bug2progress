@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
+// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -37,7 +37,7 @@ export class OrganizationService {
         },
       });
     } catch (error) {
-      new HandlePrismaDuplicateError(error, 'urlid');
+      // new HandlePrismaDuplicateError(error, 'urlid');
     }
     return org;
   }

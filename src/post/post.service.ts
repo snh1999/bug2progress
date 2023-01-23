@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
+// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { OrganizationService } from 'src/organization/organization.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -35,8 +35,9 @@ export class PostService {
         },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        new HandlePrismaDuplicateError(error, 'slug');
+      if (error instanceof PrismaClientKnownRequestError) {
+      }
+      // new HandlePrismaDuplicateError(error, 'slug');
     }
 
     // no slug? make it same as id

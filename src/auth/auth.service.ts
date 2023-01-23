@@ -10,7 +10,6 @@ import * as argon from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto, PasswordChangeDto, RegisterDto, TokenSignDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import * as crypto from 'crypto';
 import { EmailService } from './email.service';
 import { Response } from 'express';
@@ -43,7 +42,7 @@ export class AuthService {
     });
   }
 
-  async reactivateUser(userId) {
+  async reactivateUser(userId: string) {
     await this.prisma.user.update({
       where: { id: userId },
       data: { isActive: true },
@@ -61,6 +60,28 @@ export class AuthService {
   async register(dto: RegisterDto, res: Response) {
     // generate hash of input password
     const password = await argon.hash(dto.password);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password, // hashed
+        profile: {
+          create: {
+            bio: '',
+            name: dto.name,
+            username: dto.username,
+            country: dto.country ? dto.country : '',
+            photo: dto.photo ? dto.photo : '',
+          },
+        },
+      },
+    });
+    return this.sendCookie(res, {
+      id: user.id,
+      name: dto.username,
+      username: dto.name,
+    });
+
     // flag to check if username is incorrect (user created but not profile)
     let userNoProfile = false;
     // save to db
@@ -95,9 +116,9 @@ export class AuthService {
         await this.prisma.user.delete({
           where: { email: dto.email },
         });
-        new HandlePrismaDuplicateError(error, 'username');
+        // new HandlePrismaDuplicateError(error, 'username');
       }
-      new HandlePrismaDuplicateError(error, 'email');
+      // new HandlePrismaDuplicateError(error, 'email');
     }
   }
   // ################################# forgot password ##############################

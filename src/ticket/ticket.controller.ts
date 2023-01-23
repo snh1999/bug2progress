@@ -8,7 +8,13 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
-import { CreateTicketDto, UpdateTicketDto } from './dto';
+import {
+  CreateTicketDto,
+  TicketAssignDto,
+  TicketEnumDto,
+  UpdateStatusDto,
+  UpdateTicketDto,
+} from './dto';
 import { GetUser } from 'src/common/decorator';
 
 @Controller('ticket')
@@ -20,9 +26,9 @@ export class TicketController {
     return this.ticketService.create(dto, userid);
   }
 
-  @Get()
-  findAll(@Body() dto: { projectId: string }) {
-    return this.ticketService.findAll(dto.projectId);
+  @Get('project/:projectId')
+  findAll(@Param('id') projectId: string) {
+    return this.ticketService.findAll(projectId);
   }
 
   // view roles as  well
@@ -44,6 +50,21 @@ export class TicketController {
   // updateRoles(@Param('id') id: string, @Body() dto: TicketRoles) {
   //   return this.ticketService.updateRoles(id, dto);
   // }
+
+  @Patch(':ticketid/project/:projectId')
+  updateTicket(
+    @Param('projectId') projectId: string,
+    @Param('ticketid') ticketid: string,
+    @Body() dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketService.updateTicketRoles(
+      projectId,
+      ticketid,
+      dto,
+      userid,
+    );
+  }
 
   @Delete(':id')
   remove(@Param('id') id: string, @GetUser('id') userid: string) {

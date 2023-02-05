@@ -27,14 +27,14 @@ export class ProjectService {
     private userService: UserService,
   ) {}
 
-  // TODO- check organization id at frontend?
   async create(dto: CreateProjectDto, userId: string) {
     // let slug;
     // if (dto.slug) {
     //   slug = dto.slug;
     //   delete dto.slug;
     // }
-
+    // TODO- convert/check organization id at frontend?
+    // user might pass id (pk-from database) or urlid(set by user)
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }

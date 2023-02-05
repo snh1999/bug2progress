@@ -1,7 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Features } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
@@ -16,21 +13,18 @@ export class FeatureService {
   ) {}
 
   async create(dto: CreateFeatureDto, userId: string) {
-    const post = await this.postService.createBasePost(userId, dto.title);
-    let feature: Features;
-    try {
-      feature = await this.prisma.features.create({
-        data: {
-          ...dto,
-          postId: post.id,
+    return this.prisma.features.create({
+      data: {
+        ...dto,
+        basePost: {
+          create: {
+            title: dto.title,
+            postContent: `This post is automatically genereted for feature ${dto.title}.`,
+            authorId: userId,
+          },
         },
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        await this.postService.remove(post.id, userId);
-      // new HandlePrismaDuplicateError(error, 'id');
-    }
-    return feature;
+      },
+    });
   }
 
   async findAll(userid?: string) {

@@ -6,12 +6,17 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { FeatureService } from './feature.service';
 import { CreateFeatureDto } from './dto/feature-create.dto';
 import { UpdateFeatureDto } from './dto/feature-update.dto';
 import { GetUser } from 'src/common/decorator';
+import { JwtAuthGuard } from 'src/common/guard';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Features')
+@UseGuards(JwtAuthGuard)
 @Controller('feature')
 export class FeatureController {
   constructor(private readonly featureService: FeatureService) {}

@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -37,21 +36,24 @@ export class TicketService {
       data: {
         ...dto,
         creatorId: userid,
+        ticketRoles: {
+          create: {},
+        },
       },
     });
 
     // create ticketroles
-    try {
-      await this.prisma.ticketRoles.create({
-        data: {
-          ticketId: ticket.id,
-        },
-      });
-    } catch (error) {
-      // delete
-      await this.remove(ticket.id, userid);
-      throw new InternalServerErrorException('Couldnot create ticket');
-    }
+    // try {
+    //   await this.prisma.ticketRoles.create({
+    //     data: {
+    //       ticketId: ticket.id,
+    //     },
+    //   });
+    // } catch (error) {
+    //   // delete
+    //   await this.remove(ticket.id, userid);
+    //   throw new InternalServerErrorException('Couldnot create ticket');
+    // }
     return ticket;
   }
 

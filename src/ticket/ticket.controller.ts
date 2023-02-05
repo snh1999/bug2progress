@@ -16,7 +16,9 @@ import {
   UpdateTicketDto,
 } from './dto';
 import { GetUser } from 'src/common/decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Ticket')
 @Controller('ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}

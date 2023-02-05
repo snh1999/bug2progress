@@ -12,7 +12,9 @@ import { PostCommentService } from './post-comment.service';
 import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
 import { GetUser } from 'src/common/decorator';
 import { JwtAuthGuard } from 'src/common/guard';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Post-Comment')
 @UseGuards(JwtAuthGuard)
 @Controller('post/comment/:postid')
 export class PostCommentController {

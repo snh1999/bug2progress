@@ -19,14 +19,11 @@ import {
   DeleteContributorDto,
 } from './dto';
 import { ProjectRole } from '@prisma/client';
-import {
-  TicketEnumDto,
-  UpdateStatusDto,
-  TicketAssignDto,
-} from 'src/ticket/dto';
 import { ProjectFeatureService } from './projectxfeature.service';
 import { ProjectFeatureDto } from './dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Project')
 @UseGuards(JwtAuthGuard)
 @Controller('project')
 export class ProjectController {

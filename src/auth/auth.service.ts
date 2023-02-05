@@ -48,6 +48,7 @@ export class AuthService {
       data: { isActive: true },
     });
   }
+
   // ################################# log in ################################
   logout(res: Response) {
     res.cookie('token', '', { expires: new Date() });
@@ -56,6 +57,7 @@ export class AuthService {
       message: 'Logged Out successfully',
     };
   }
+
   // ################################# Register ################################
   async register(dto: RegisterDto, res: Response) {
     // generate hash of input password
@@ -76,66 +78,35 @@ export class AuthService {
         },
       },
     });
+
     return this.sendCookie(res, {
       id: user.id,
       name: dto.username,
       username: dto.name,
     });
-
-    // flag to check if username is incorrect (user created but not profile)
-    let userNoProfile = false;
-    // save to db
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          password, // hashed
-        },
-      });
-      userNoProfile = true;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const profile = await this.prisma.profile.create({
-        data: {
-          userId: user.id,
-          bio: '',
-          name: dto.name,
-          username: dto.username,
-          country: dto.country ? dto.country : '',
-          photo: dto.photo ? dto.photo : '',
-        },
-      });
-      // return token
-      return this.sendCookie(res, {
-        id: user.id,
-        name: profile.username,
-        username: profile.name,
-      });
-    } catch (error) {
-      // user is created but username wasnot unique
-      if (userNoProfile) {
-        await this.prisma.user.delete({
-          where: { email: dto.email },
-        });
-        // new HandlePrismaDuplicateError(error, 'username');
-      }
-      // new HandlePrismaDuplicateError(error, 'email');
-    }
   }
+
   // ################################# forgot password ##############################
   async forgotPassword(host: string, email: string) {
     // find user by email
     const user = await this.findUserByEmail(email);
     if (!user) throw new NotFoundException('No user with that email');
+
+    // define necessary options
     const tokenToSend = await this.generatePasswordResetToken(email);
     const resetURL = `${host}/resetpassword/${tokenToSend}`;
     const message = `Forgot password? Follow the link to reset your password: ${resetURL}. If you didnot make this request, please ignore this email`;
+
+    // we will send this
+    const options = {
+      email: user.email,
+      subject: 'Your password reset token (valid for next 10 min)',
+      message,
+    };
+
+    // sending process
     try {
-      const options = {
-        email: user.email,
-        subject: 'Your password reset token (valid for next 10 min)',
-        message,
-      };
-      console.log(options);
+      // console.log(options);
       await this.emailService.sendEmail(options); // token send to email
     } catch (err) {
       console.log(err);
@@ -158,6 +129,7 @@ export class AuthService {
 
     return tokenToSend;
   }
+
   // ################################# reset password ################################
   async resetPassword(token: string, password: string, res: Response) {
     // get user from token
@@ -166,10 +138,12 @@ export class AuthService {
       where: { passwordResetToken: hashedToken },
       include: { profile: { select: { name: true, username: true } } },
     });
+
     // if token not expired, and user exists- set new password
     if (!user || user.passwordTokenExpiry.getTime() < Date.now()) {
       throw new BadRequestException('Token invalid or expired, Try again');
     }
+
     // update password
     await this.updatePassword(user.id, password);
     // log user in(send back jwt)
@@ -179,23 +153,29 @@ export class AuthService {
       name: user.profile.name,
     });
   }
+
   // ################################# change password ################################
   async changePassword(req: Request, res: Response, dto: PasswordChangeDto) {
     const userId = req['user'].id;
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
+
     // user doesnot exist or input password didnot match with user password
     if (!user || !(await argon.verify(user.password, dto.oldPassword))) {
       throw new ForbiddenException('Please input correct password');
     }
+
+    // save password hash
     const password = await argon.hash(dto.newPassword);
     await this.updatePassword(userId, password);
-    console.log('here');
+
+    // this works because user is logged in, so the payload is already available
     return this.sendCookie(res, {
       ...req['user'],
     });
   }
+
   // ################################# helper functions ################################
   async sendCookie(res: Response, payload: TokenSignDto) {
     const token = await this.signToken(payload);

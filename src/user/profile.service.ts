@@ -17,11 +17,13 @@ export class ProfileService {
   async getMyProfile(userId: string) {
     return await this.returnProfile(userId, true);
   }
+
   // ######################## view profile #############################
   async viewProfile(username: string) {
     const userid = await this.userService.getIdFromUsername(username);
     return await this.returnProfile(userid, false);
   }
+
   // ########################## edit profile ################################
   async editMyProfile(userId: string, dto: EditProfileDto) {
     // update email (from user)
@@ -59,12 +61,17 @@ export class ProfileService {
     const profile = await this.getProfileById(userid);
     const user = profile.user;
     delete profile.user;
+
     if (isMe || user.isActive) {
       delete user.isActive;
-      return {
-        ...profile,
-        ...user,
-      };
+      // my profile, include info
+      if (isMe)
+        return {
+          ...profile,
+          ...user,
+        };
+      // viewing profile, only show profile
+      else return { ...profile };
     } else {
       throw new NotFoundException('404 not found');
     }
@@ -76,13 +83,7 @@ export class ProfileService {
         userId: id,
       },
       include: {
-        user: {
-          select: {
-            email: true,
-            joinedAt: true,
-            isActive: true,
-          },
-        },
+        user: true,
       },
     });
     return profile;

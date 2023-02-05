@@ -26,21 +26,45 @@ export class ProjectService {
     private postService: PostService,
     private userService: UserService,
   ) {}
-  // TODO - add featureXproject
 
   // TODO- check organization id at frontend?
   async create(dto: CreateProjectDto, userId: string) {
+    // let slug;
+    // if (dto.slug) {
+    //   slug = dto.slug;
+    //   delete dto.slug;
+    // }
+
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }
+    if (dto.slug) delete dto.slug;
+
     // add a new post as well with base post
+    // this.prisma.project.create({
+    //   data: {
+    //     title: dto.title,
+    //     summary: dto.summary,
+    //     organizationId: dto.organizationId,
+    //     urlid: dto.urlid,
+    //     ownerId: userId,
+    //     basePost: {
+    //       create: {
+    //         title: dto.title,
+    //         postContent: `This post is automatically genereted for Project ${dto.title}.`,
+    //         authorId: userId,
+    //         // slug,
+    //       },
+    //     },
+    //   },
+    // });
     const post = await this.postService.createBasePost(userId, dto.title);
     let project: Project;
     try {
       project = await this.prisma.project.create({
         data: {
-          ...dto,
           basePostId: post.id,
+          ...dto,
           ownerId: userId,
         },
       });

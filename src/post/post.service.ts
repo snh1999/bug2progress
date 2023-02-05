@@ -3,8 +3,6 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { OrganizationService } from 'src/organization/organization.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -26,19 +24,12 @@ export class PostService {
     if (!dto.summary) {
       dto.summary = dto.postContent.split('.')[0];
     }
-    let post;
-    try {
-      post = await this.prisma.post.create({
-        data: {
-          ...dto,
-          authorId: userId,
-        },
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-      }
-      // new HandlePrismaDuplicateError(error, 'slug');
-    }
+    const post = await this.prisma.post.create({
+      data: {
+        ...dto,
+        authorId: userId,
+      },
+    });
 
     // no slug? make it same as id
     if (!post.slug) await this.update(post.id, { slug: post.id }, userId);
@@ -46,11 +37,15 @@ export class PostService {
   }
 
   // send not more than 10
-  async findAll(userid?: string) {
-    if (userid)
+  async findAll(username?: string) {
+    if (username)
       return this.prisma.post.findMany({
         where: {
-          authorId: userid,
+          author: {
+            profile: {
+              username: username,
+            },
+          },
         },
       });
     return this.prisma.post.findMany({});
@@ -67,14 +62,6 @@ export class PostService {
             slug: id,
           },
         ],
-      },
-      include: {
-        postComment: {
-          take: 10,
-          orderBy: {
-            updatedAt: 'desc',
-          },
-        },
       },
     });
     if (!post) throw new NotFoundException('404 Not found');
@@ -103,9 +90,15 @@ export class PostService {
 
     const deleted = await this.prisma.post.deleteMany({
       where: {
-        AND: [{ id: post.id }, { authorId: userid }],
+        AND: [
+          { id: post.id },
+          { authorId: userid },
+          { project: null },
+          { features: null },
+        ],
       },
     });
+    console.log(deleted);
     if (deleted.count == 1)
       return {
         message: 'removed successfully',

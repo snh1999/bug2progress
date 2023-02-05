@@ -12,6 +12,7 @@ import { HttpAdapterHost } from '@nestjs/core';
 import {
   PrismaClientInitializationError,
   PrismaClientKnownRequestError,
+  PrismaClientValidationError,
 } from '@prisma/client/runtime';
 
 @Catch()
@@ -65,6 +66,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.handlePrismaClientInitializationError();
     } else if (exception instanceof PrismaClientKnownRequestError) {
       this.handlePrismaClientKnownRequestError(exception);
+    } else if (exception instanceof PrismaClientValidationError) {
+      this.handlePrismaClientValidationError();
     } else {
       this.handleUnknownServerError();
     }
@@ -80,6 +83,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.errorTitle = 'Database Constraint failed';
     } else this.handleUnknownServerError();
   }
+
+  handlePrismaClientValidationError() {
+    this.httpmessage = 'Internal Server Error';
+    this.errorTitle = 'Invalid Input';
+  }
+
   handleUnknownServerError() {
     this.httpmessage = 'Internal Server Error';
   }

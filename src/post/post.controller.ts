@@ -13,7 +13,9 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from 'src/common/guard';
 import { GetUser } from 'src/common/decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Post')
 @Controller('post')
 @UseGuards(JwtAuthGuard)
 export class PostController {
@@ -25,8 +27,8 @@ export class PostController {
   }
 
   @Get()
-  findAll() {
-    return this.postService.findAll();
+  findAll(@Body() dto?: { username: string }) {
+    return this.postService.findAll(dto.username);
   }
 
   @Get(':id')

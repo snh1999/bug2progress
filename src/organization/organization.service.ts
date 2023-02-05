@@ -1,13 +1,10 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Organization } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-// import { HandlePrismaDuplicateError } from 'src/common/interceptor/handle.prisma-error';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -27,21 +24,15 @@ export class OrganizationService {
 
   // ############################## create organization ############################
   async create(dto: CreateOrganizationDto, userid: string) {
-    let org: Organization;
-    try {
-      org = await this.prisma.organization.create({
-        data: {
-          ...dto,
-          updateLog: ' ',
-          ownerId: userid,
-        },
-      });
-    } catch (error) {
-      // new HandlePrismaDuplicateError(error, 'urlid');
-    }
-    return org;
+    return this.prisma.organization.create({
+      data: {
+        ...dto,
+        updateLog: ' ',
+        ownerId: userid,
+      },
+    });
   }
-
+  // TODO - add updatelog and update org
   // ############################ view all organization ############################
   async findAll() {
     const orgAll = await this.prisma.organization.findMany({});
@@ -52,29 +43,23 @@ export class OrganizationService {
 
   // #################################### BY ID (o/:id) #############################
   // ############################# view organization by id #########################
-  async findOne(orgid: string) {
-    const org = await this.prisma.organization.findUnique({
+  async findOne(urlOrId: string) {
+    const org = this.prisma.organization.findFirst({
       where: {
-        urlid: orgid,
-      },
-      include: {
-        project: {
-          take: 10,
-          orderBy: {
-            createdAt: 'desc',
+        OR: [
+          {
+            urlid: urlOrId,
           },
-        },
-        post: {
-          take: 10,
-          orderBy: {
-            createdAt: 'desc',
+          {
+            id: urlOrId,
           },
-        },
+        ],
       },
     });
-    if (!org) return new NotFoundException('404 Not found');
+    if (!org) throw new NotFoundException('404 Not found');
     return org;
   }
+
   // ############################# view all members of org #########################
   async viewAllMembers(orgurl: string) {
     // using another model, so we have to get the ID
@@ -186,21 +171,17 @@ export class OrganizationService {
     if (!idToAdd) return new NotFoundException('Invalid username');
     const orgId = await this.getOrgId(orgurl);
 
-    try {
-      return this.prisma.orgMembers.update({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: idToAdd,
-          },
+    return this.prisma.orgMembers.update({
+      where: {
+        organizationId_userId: {
+          organizationId: orgId,
+          userId: idToAdd,
         },
-        data: {
-          memberType: dto.role,
-        },
-      });
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
+      },
+      data: {
+        memberType: dto.role,
+      },
+    });
   }
 
   // ############################# join organization ##########################
@@ -231,18 +212,15 @@ export class OrganizationService {
   // ############################# leave organization ##########################
   async removeMember(orgurl: string, userid: string) {
     const organizationId = await this.getOrgId(orgurl);
-    try {
-      await this.prisma.orgMembers.delete({
-        where: {
-          organizationId_userId: {
-            organizationId: organizationId,
-            userId: userid,
-          },
+    await this.prisma.orgMembers.delete({
+      where: {
+        organizationId_userId: {
+          organizationId: organizationId,
+          userId: userid,
         },
-      });
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
-    }
+      },
+    });
+
     return {
       message: 'User No longer part of Organization',
     };
@@ -257,22 +235,7 @@ export class OrganizationService {
 
   // ############################# find id from url ##########################
   async getOrgId(urlOrId: string) {
-    const org = await this.prisma.organization.findFirst({
-      where: {
-        OR: [
-          {
-            urlid: urlOrId,
-          },
-          {
-            id: urlOrId,
-          },
-        ],
-      },
-      select: {
-        id: true,
-      },
-    });
-    if (!org) throw new NotFoundException('404 Not found');
+    const org = await this.findOne(urlOrId);
     return org.id;
   }
 

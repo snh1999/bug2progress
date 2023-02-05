@@ -18,7 +18,9 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '../common/guard';
 import { GetUser, Public } from '../common/decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Organization')
 @UseGuards(JwtAuthGuard)
 @Controller('organization')
 export class OrganizationController {

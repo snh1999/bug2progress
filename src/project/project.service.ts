@@ -40,6 +40,21 @@ export class ProjectService {
     }
     if (dto.slug) delete dto.slug;
 
+    // return this.prisma.project.create({
+    //   data: {
+    //     ...dto,
+    //     ownerId: userId,
+    //     basePost: {
+    //       create: {
+    //         title: dto.title,
+    //         postContent: `This post is automatically genereted for Project ${dto.title}.`,
+    //         authorId: userId,
+    //         // slug,
+    //       },
+    //     },
+    //   },
+    // });
+
     // add a new post as well with base post
     // this.prisma.project.create({
     //   data: {
@@ -58,6 +73,7 @@ export class ProjectService {
     //     },
     //   },
     // });
+
     const post = await this.postService.createBasePost(userId, dto.title);
     let project: Project;
     try {

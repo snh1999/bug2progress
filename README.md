@@ -1,16 +1,64 @@
-The automatic tests have not been rewritten after User module.
+# bug2progress
+
+bug2progress is a RESTful API aimed at anyone trying to build a bugtracker, specially for project tracker for educational organizations.
+
+The repository for [frontend](https://github.com/snh1999/bug2progress-frontend) (in porgress).
+
+### Why?
+
+Often times, the teammates with low to zero contribution gets away- and often it is hard to make them use the industry standard solutions because of various contraints. So a project like this could be a customized (for each institutions) entry point for students.
+
+## Quickstart
+
+[`pnpm`](https://pnpm.io/installation), [`prisma`](https://www.prisma.io/docs/getting-started/quickstart) is required to run this project. Make sure there is [`node.js`](https://nodejs.org/en) and [`docker`](https://docs.docker.com/desktop/) is installed beforehand.
+
+```bash
+npm install -g pnpm
+```
+
+Clone the repository.
+
+```bash
+git clone https://github.com/snh1999/bug2progress
+cd bug2progress
+pnpm install
+```
+
+Docker compose to manage database. [Note- make sure you check the `docker-compose.yml` file for port, passowrd and other customizations].
+
+```bash
+docker compose up db -d
+```
+
+for prisma migration (make sure the database is running)
+
+```bash
+npx prisma migrate dev
+```
+
+finally run the server
+
+```bash
+pnpm run start:dev
+```
+
+to view swagger documentation, visit `http://localhost:8080/api` (given you have not changed the port in `main.ts`)
+
+NOTE: The automatic tests have not been rewritten after User module.
 
 To Run the code pnpm(Package Manager) docker(`docker compose up db -d`-for database operations) needs to be installed.
 
-# API Documentation
+### API Documentation
 
 This repository contains the documentation for the API endpoints of the project.
 
-## Table of Contents
+#### Table of Contents
 
-- [API Documentation](#api-documentation)
-  - [Table of Contents](#table-of-contents)
-  - [Authentication](#authentication)
+- [bug2progress](#bug2progress)
+  - [Why?](#why)
+  - [Quickstart](#quickstart)
+    - [API Documentation](#api-documentation)
+      - [Table of Contents](#table-of-contents)
     - [Register](#register)
     - [Login](#login)
     - [Forgot Password](#forgot-password)
@@ -55,7 +103,7 @@ This repository contains the documentation for the API endpoints of the project.
     - [Get Comments {orgId}/{repositoryId}/pull-requests/{pullRequestId}/comments](#get-comments-orgidrepositoryidpull-requestspullrequestidcomments)
     - [Delete Comment {orgId}/{repositoryId}/pull-requests/{pullRequestId}/comments/{commentId}](#delete-comment-orgidrepositoryidpull-requestspullrequestidcommentscommentid)
 
-## Authentication
+ALL PATHS START WITH `api/v1`
 
 ### Register
 

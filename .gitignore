@@ -1,6 +1,8 @@
 # compiled output
 /dist
 /node_modules
+.env
+.env.test
 
 # Logs
 logs
@@ -34,5 +36,3 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-process.md
-profile-workflow/

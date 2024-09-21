@@ -7,8 +7,6 @@ import {
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 
-// add  app.useGlobalInterceptors(new LoggerInterceptor()); to main.ts
-
 @Injectable()
 export class LoggerInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggerInterceptor.name);

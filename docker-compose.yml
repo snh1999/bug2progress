@@ -1,7 +1,6 @@
-version: '3.8'
 services:
   db:
-    image: postgres:13
+    image: postgres
     ports:
       - '5432:5432'
     environment:
@@ -9,12 +8,12 @@ services:
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: bug2progress
   test-db:
-    image: postgres:13
+    image: postgres
     ports:
       - '5434:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: bug2progress
+      POSTGRES_DB: bug2progress_test
     # volumes:
     #   - ./pgdata:/var/lib/postgresql/data

@@ -5,15 +5,12 @@ import * as cookieParser from 'cookie-parser';
 import ratelimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const xss = require('xss-clean');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(helmet());
   app.use(cookieParser());
-  app.use(xss());
   app.use(
     ratelimit({
       max: parseInt(process.env.MAX_REQ_HR),

@@ -8,7 +8,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as argon from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto, PasswordChangeDto, RegisterDto, TokenSignDto } from './dto';
+import {
+  LoginDto,
+  PasswordChangeDto,
+  RegisterDto,
+  JwtTokenPayload,
+} from './dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { EmailService } from './email.service';
@@ -21,20 +26,23 @@ export class AuthService {
     private config: ConfigService,
     private emailService: EmailService,
   ) {}
-  // ################################# log in ################################
-  async login(dto: AuthDto, res: Response) {
-    // find the user from email (inputted by user)
+
+  async login(dto: LoginDto, res: Response) {
     const user = await this.findUserByEmail(dto.email);
-    // user doesnot exist or input password didnot match with user password
-    if (!user || !(await argon.verify(user.password, dto.password))) {
+
+    if (!(await argon.verify(user.password, dto.password))) {
       throw new ForbiddenException('Email or password not matching');
     }
+
     if (!user.isActive) {
       await this.reactivateUser(user.id);
     }
-    // find the user name and username- delete if not required
+
     const profile = user.profile;
-    delete user.profile;
+    if (!profile) {
+      throw new NotFoundException('Can not find user, something went wrong');
+    }
+
     return await this.sendCookie(res, {
       id: user.id,
       username: profile.username,
@@ -42,38 +50,25 @@ export class AuthService {
     });
   }
 
-  async reactivateUser(userId: string) {
-    await this.prisma.user.update({
+  reactivateUser(userId: string) {
+    return this.prisma.user.update({
       where: { id: userId },
       data: { isActive: true },
     });
   }
 
-  // ################################# log in ################################
-  logout(res: Response) {
-    res.cookie('token', '', { expires: new Date() });
-    return {
-      token: '',
-      message: 'Logged Out successfully',
-    };
-  }
-
-  // ################################# Register ################################
   async register(dto: RegisterDto, res: Response) {
-    // generate hash of input password
-    const password = await argon.hash(dto.password);
+    const hashedPassword = await argon.hash(dto.password);
+
+    const { email, name, username } = dto;
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
-        password, // hashed
+        email,
+        password: hashedPassword,
         profile: {
           create: {
-            bio: '',
-            name: dto.name,
-            username: dto.username,
-            country: dto.country ? dto.country : '',
-            photo: dto.photo ? dto.photo : '',
+            ...dto,
           },
         },
       },
@@ -81,110 +76,100 @@ export class AuthService {
 
     return this.sendCookie(res, {
       id: user.id,
-      name: dto.username,
-      username: dto.name,
+      name,
+      username,
     });
   }
 
-  // ################################# forgot password ##############################
   async forgotPassword(host: string, email: string) {
-    // find user by email
     const user = await this.findUserByEmail(email);
     if (!user) throw new NotFoundException('No user with that email');
 
-    // define necessary options
-    const tokenToSend = await this.generatePasswordResetToken(email);
-    const resetURL = `${host}/resetpassword/${tokenToSend}`;
-    const message = `Forgot password? Follow the link to reset your password: ${resetURL}. If you didnot make this request, please ignore this email`;
+    const token = await this.generatePasswordResetToken(email);
+    const resetURL = `${host}/resetpassword/${token}`;
+    const message = `Forgot password? Follow the link to reset your password: ${resetURL}. If you did not make this request, please ignore this email`;
 
-    // we will send this
     const options = {
       email: user.email,
       subject: 'Your password reset token (valid for next 10 min)',
       message,
     };
 
-    // sending process
     try {
-      // console.log(options);
-      await this.emailService.sendEmail(options); // token send to email
+      await this.emailService.sendEmail(options);
     } catch (err) {
       console.log(err);
-      await this.updatePasswordResetFields(email, null, null);
+      await this.updatePasswordResetFields(email);
       throw new InternalServerErrorException(
-        'Error Occured while sending the email. Please Try again later',
+        'Error Occurred while sending the email. Please Try again later',
       );
     }
+
+    return 'Email sent Successfully, Please check your email';
   }
 
   async generatePasswordResetToken(email: string) {
-    const tokenToSend = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = this.hashGivenToken(tokenToSend);
+    const token = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = this.hashGivenToken(token);
 
     await this.updatePasswordResetFields(
       email,
-      passwordResetToken,
       new Date(Date.now() + 15 * 60 * 1000),
+      passwordResetToken,
     );
 
-    return tokenToSend;
+    return token;
   }
 
-  // ################################# reset password ################################
-  async resetPassword(token: string, password: string, res: Response) {
-    // get user from token
+  async resetPassword(token: string, password: string) {
     const hashedToken = this.hashGivenToken(token);
     const user = await this.prisma.user.findFirst({
       where: { passwordResetToken: hashedToken },
       include: { profile: { select: { name: true, username: true } } },
     });
 
-    // if token not expired, and user exists- set new password
-    if (!user || user.passwordTokenExpiry.getTime() < Date.now()) {
+    if (
+      !user ||
+      !user.passwordTokenExpiry ||
+      user.passwordTokenExpiry.getTime() < Date.now()
+    ) {
       throw new BadRequestException('Token invalid or expired, Try again');
     }
 
-    // update password
     await this.updatePassword(user.id, password);
-    // log user in(send back jwt)
-    return this.sendCookie(res, {
-      id: user.id,
-      username: user.profile.username,
-      name: user.profile.name,
-    });
+
+    return 'Password Updated Successfully';
   }
 
-  // ################################# change password ################################
-  async changePassword(req: Request, res: Response, dto: PasswordChangeDto) {
-    const userId = req['user'].id;
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+  async changePassword(
+    tokenPayload: JwtTokenPayload,
+    res: Response,
+    dto: PasswordChangeDto,
+  ) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: tokenPayload.id },
     });
 
-    // user doesnot exist or input password didnot match with user password
-    if (!user || !(await argon.verify(user.password, dto.oldPassword))) {
+    if (!(await argon.verify(user.password, dto.oldPassword))) {
       throw new ForbiddenException('Please input correct password');
     }
 
-    // save password hash
     const password = await argon.hash(dto.newPassword);
-    await this.updatePassword(userId, password);
+    await this.updatePassword(tokenPayload.id, password);
 
-    // this works because user is logged in, so the payload is already available
     return this.sendCookie(res, {
-      ...req['user'],
+      ...tokenPayload,
     });
   }
 
-  // ################################# helper functions ################################
-  async sendCookie(res: Response, payload: TokenSignDto) {
+  private async sendCookie(res: Response, payload: JwtTokenPayload) {
     const token = await this.signToken(payload);
     const cookieOptions = {
       expires: new Date(new Date().getTime() + 30 * 1000),
       // sameSite: 'strict',
       httpOnly: true,
     };
-    if (this.config.get('Environment') != 'DEV') cookieOptions['secure'] = true;
+    // if (this.config.get('Environment') != 'DEV') cookieOptions['secure'] = true;
     res.cookie('token', token, cookieOptions);
     return {
       token,
@@ -192,7 +177,7 @@ export class AuthService {
     };
   }
 
-  async signToken(payload: TokenSignDto) {
+  private async signToken(payload: JwtTokenPayload) {
     const token = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get('TOKEN_EXPIRY_TIME'),
       secret: this.config.get('JWT_KEY'),
@@ -201,7 +186,7 @@ export class AuthService {
   }
 
   async findUserByEmail(email: string) {
-    return this.prisma.user.findUnique({
+    return this.prisma.user.findUniqueOrThrow({
       where: { email },
       include: {
         profile: {
@@ -214,14 +199,14 @@ export class AuthService {
     });
   }
 
-  hashGivenToken(token: string) {
+  private hashGivenToken(token: string) {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  async updatePasswordResetFields(
-    email,
-    passwordResetToken,
-    passwordTokenExpiry,
+  private async updatePasswordResetFields(
+    email: string,
+    passwordTokenExpiry: Date = new Date(),
+    passwordResetToken?: string,
   ) {
     await this.prisma.user.update({
       where: {

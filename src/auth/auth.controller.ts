@@ -4,22 +4,22 @@ import {
   Post,
   Headers,
   Param,
-  Req,
   UseGuards,
   Res,
-  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
-  AuthDto,
+  LoginDto,
   PasswordChangeDto,
   PasswordForgotDto,
   PasswordResetDto,
   RegisterDto,
+  JwtTokenPayload,
 } from './dto';
+import { GetUser } from '@/common/decorator';
 
 @ApiTags('Auth')
 @Controller('')
@@ -34,11 +34,11 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() dto: AuthDto, @Res({ passthrough: true }) res: Response) {
+  login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     return this.authService.login(dto, res);
   }
 
-  @Post('forgotPassword')
+  @Post('forgot-password')
   forgotPassword(
     @Headers('host') host: string,
     @Body() dto: PasswordForgotDto,
@@ -46,27 +46,21 @@ export class AuthController {
     return this.authService.forgotPassword(host, dto.email);
   }
 
-  @Post('resetPassword/:token')
+  @Post('reset-password/:token')
   resetPasswordByToken(
     @Param('token') token: string,
     @Body() dto: PasswordResetDto,
-    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.resetPassword(token, dto.password, res);
-  }
-
-  @Get('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res);
+    return this.authService.resetPassword(token, dto.password);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Post('changePassword')
+  @Post('change-password')
   changePassword(
-    @Req() req: Request,
+    @GetUser() tokenPayload: JwtTokenPayload,
     @Body() dto: PasswordChangeDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.changePassword(req, res, dto);
+    return this.authService.changePassword(tokenPayload, res, dto);
   }
 }

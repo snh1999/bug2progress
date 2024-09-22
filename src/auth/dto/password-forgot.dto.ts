@@ -8,5 +8,5 @@ export class PasswordForgotDto {
   })
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 }

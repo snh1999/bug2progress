@@ -6,9 +6,9 @@ import {
   Param,
   UseGuards,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -20,9 +20,10 @@ import {
   JwtTokenPayload,
 } from './dto';
 import { GetUser } from '@/common/decorator';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
 
-@ApiTags('Auth')
-@Controller('')
+@UseInterceptors(ResponseTransformInterceptor)
+@Controller()
 export class AuthController {
   constructor(private authService: AuthService) {}
   @Post('register')

@@ -1,10 +1,4 @@
-import {
-  IsAlpha,
-  IsAlphanumeric,
-  IsEmail,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 export class RegisterDto {
   @IsString()
   @IsEmail()
@@ -13,10 +7,10 @@ export class RegisterDto {
   @IsString()
   password!: string;
 
-  @IsAlpha()
+  @IsString()
   name!: string;
 
-  @IsAlphanumeric()
+  @IsString()
   username!: string;
 
   @IsOptional()

@@ -30,8 +30,8 @@ export class AuthService {
   async login(dto: LoginDto, res: Response) {
     const user = await this.findUserByEmail(dto.email);
 
-    if (!(await argon.verify(user.password, dto.password))) {
-      throw new ForbiddenException('Email or password not matching');
+    if (!user || !(await argon.verify(user.password, dto.password))) {
+      throw new NotFoundException('Email or password is Incorrect');
     }
 
     if (!user.isActive) {
@@ -50,7 +50,7 @@ export class AuthService {
     });
   }
 
-  reactivateUser(userId: string) {
+  private reactivateUser(userId: string) {
     return this.prisma.user.update({
       where: { id: userId },
       data: { isActive: true },
@@ -58,9 +58,8 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto, res: Response) {
-    const hashedPassword = await argon.hash(dto.password);
-
-    const { email, name, username } = dto;
+    const { email, name, username, bio, password, country, photo } = dto;
+    const hashedPassword = await argon.hash(password);
 
     const user = await this.prisma.user.create({
       data: {
@@ -68,7 +67,11 @@ export class AuthService {
         password: hashedPassword,
         profile: {
           create: {
-            ...dto,
+            name,
+            username,
+            bio,
+            country,
+            photo,
           },
         },
       },
@@ -101,14 +104,14 @@ export class AuthService {
       console.log(err);
       await this.updatePasswordResetFields(email);
       throw new InternalServerErrorException(
-        'Error Occurred while sending the email. Please Try again later',
+        'Error sending email. Please try again later',
       );
     }
 
     return 'Email sent Successfully, Please check your email';
   }
 
-  async generatePasswordResetToken(email: string) {
+  private async generatePasswordResetToken(email: string) {
     const token = crypto.randomBytes(32).toString('hex');
     const passwordResetToken = this.hashGivenToken(token);
 
@@ -185,8 +188,8 @@ export class AuthService {
     return token;
   }
 
-  async findUserByEmail(email: string) {
-    return this.prisma.user.findUniqueOrThrow({
+  private async findUserByEmail(email: string) {
+    return this.prisma.user.findUnique({
       where: { email },
       include: {
         profile: {
@@ -219,7 +222,7 @@ export class AuthService {
     });
   }
 
-  async updatePassword(id: string, password: string) {
+  private async updatePassword(id: string, password: string) {
     await this.prisma.user.update({
       where: {
         id,

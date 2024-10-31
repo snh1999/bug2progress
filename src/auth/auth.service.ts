@@ -86,7 +86,9 @@ export class AuthService {
 
   async forgotPassword(host: string, email: string) {
     const user = await this.findUserByEmail(email);
-    if (!user) throw new NotFoundException('No user with that email');
+    if (!user) {
+      throw new NotFoundException('No user with that email');
+    }
 
     const token = await this.generatePasswordResetToken(email);
     const resetURL = `${host}/resetpassword/${token}`;
@@ -112,8 +114,8 @@ export class AuthService {
   }
 
   private async generatePasswordResetToken(email: string) {
-    const token = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = this.hashGivenToken(token);
+    const plainTextToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = this.hashTokenString(plainTextToken);
 
     await this.updatePasswordResetFields(
       email,
@@ -121,11 +123,11 @@ export class AuthService {
       passwordResetToken,
     );
 
-    return token;
+    return plainTextToken;
   }
 
   async resetPassword(token: string, password: string) {
-    const hashedToken = this.hashGivenToken(token);
+    const hashedToken = this.hashTokenString(token);
     const user = await this.prisma.user.findFirst({
       where: { passwordResetToken: hashedToken },
       include: { profile: { select: { name: true, username: true } } },
@@ -202,7 +204,7 @@ export class AuthService {
     });
   }
 
-  private hashGivenToken(token: string) {
+  private hashTokenString(token: string) {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
@@ -229,7 +231,7 @@ export class AuthService {
       },
       data: {
         password,
-        passwordChangedAt: new Date(Date.now() - 1),
+        passwordChangedAt: new Date(),
         passwordResetToken: null,
         passwordTokenExpiry: null,
       },

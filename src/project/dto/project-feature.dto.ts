@@ -4,5 +4,5 @@ import { IsEnum, IsOptional } from 'class-validator';
 export class ProjectFeatureDto {
   @IsEnum(FeatureType)
   @IsOptional()
-  featureType: FeatureType;
+  featureType?: FeatureType;
 }

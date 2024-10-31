@@ -13,18 +13,16 @@ export class ProfileService {
     private prisma: PrismaService,
     private userService: UserService,
   ) {}
-  // ########################## view my profile ################################
+
   async getMyProfile(userId: string) {
     return await this.returnProfile(userId, true);
   }
 
-  // ######################## view profile #############################
   async viewProfile(username: string) {
     const userid = await this.userService.getIdFromUsername(username);
     return await this.returnProfile(userid, false);
   }
 
-  // ########################## edit profile ################################
   async editMyProfile(userId: string, dto: EditProfileDto) {
     // update email (from user)
     if (dto.email) {
@@ -56,21 +54,18 @@ export class ProfileService {
 
     await this.userService.updateEmail(userId, email);
   }
-  // ########################## helper functions ################################
-  async returnProfile(userid: string, isMe: boolean) {
-    const profile = await this.getProfileById(userid);
-    const user = profile.user;
-    delete profile.user;
+  async returnProfile(userId: string, isMe: boolean) {
+    const profile = await this.getProfileById(userId);
+    const user = profile?.user;
+    // delete profile.user;
 
-    if (isMe || user.isActive) {
-      delete user.isActive;
-      // my profile, include info
+    if (isMe || user?.isActive) {
+      // delete user.isActive;
       if (isMe)
         return {
           ...profile,
           ...user,
         };
-      // viewing profile, only show profile
       else return { ...profile };
     } else {
       throw new NotFoundException('404 not found');

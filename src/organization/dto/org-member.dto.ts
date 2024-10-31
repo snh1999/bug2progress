@@ -4,21 +4,21 @@ import { MemberType } from '@prisma/client';
 export class OrgMembersDto {
   @IsString()
   @IsNotEmpty()
-  userName: string;
+  userName!: string;
 }
 
 export class OrgMemberRoleDto {
   @IsEnum(MemberType)
   @IsNotEmpty()
-  role: MemberType;
+  role!: MemberType;
 }
 
 export class ChangeMemberRoleDto {
   @IsString()
   @IsNotEmpty()
-  userName: string;
+  userName!: string;
 
   @IsEnum(MemberType)
   @IsNotEmpty()
-  role: MemberType;
+  role!: MemberType;
 }

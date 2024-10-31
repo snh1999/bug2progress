@@ -10,7 +10,7 @@ import {
 export class CreatePostDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @IsString()
   @IsOptional()
@@ -23,15 +23,15 @@ export class CreatePostDto {
 
   @IsString()
   @IsNotEmpty()
-  postContent: string;
+  postContent!: string;
 
   @IsArray()
   @IsOptional()
-  attachmentFiles: string[];
+  attachmentFiles?: string[];
 
   @IsAlphanumeric()
   @IsOptional()
-  organizationId: string;
+  organizationId?: string;
 
   @IsBoolean()
   @IsOptional()

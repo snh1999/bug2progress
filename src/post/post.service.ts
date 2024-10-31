@@ -3,10 +3,10 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { OrganizationService } from 'src/organization/organization.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { OrganizationService } from '@/organization/organization.service';
 
 @Injectable()
 export class PostService {
@@ -20,7 +20,7 @@ export class PostService {
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
     }
-    // no summary, use first line of post
+
     if (!dto.summary) {
       dto.summary = dto.postContent.split('.')[0];
     }
@@ -31,12 +31,10 @@ export class PostService {
       },
     });
 
-    // no slug? make it same as id
     if (!post.slug) await this.update(post.id, { slug: post.id }, userId);
     return post;
   }
 
-  // send not more than 10
   async findAll(username?: string) {
     if (username)
       return this.prisma.post.findMany({
@@ -85,14 +83,14 @@ export class PostService {
     });
   }
 
-  async remove(id: string, userid: string) {
+  async remove(id: string, userId: string) {
     const post = await this.findOne(id);
 
     const deleted = await this.prisma.post.deleteMany({
       where: {
         AND: [
           { id: post.id },
-          { authorId: userid },
+          { authorId: userId },
           { project: null },
           { features: null },
         ],
@@ -112,7 +110,7 @@ export class PostService {
     return this.prisma.post.create({
       data: {
         title,
-        postContent: 'This post is automatically genereted.',
+        postContent: 'This post is automatically generated.',
         authorId: userId,
       },
     });

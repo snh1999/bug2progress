@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { TicketCommentService } from './ticket-comment.service';
 import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
-import { GetUser } from 'src/common/decorator';
 import { ApiTags } from '@nestjs/swagger';
+import { GetUser } from '@/common/decorator';
 
 @ApiTags('Ticket-comment')
 @Controller('ticket/comment/:ticketid')

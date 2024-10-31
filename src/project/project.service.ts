@@ -3,9 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Project, ProjectRole } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-// import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
+import { ProjectRole } from '@prisma/client';
 import { OrganizationService } from '../organization/organization.service';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,6 +15,7 @@ import {
   UpdateContributorDto,
   DeleteContributorDto,
 } from './dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ProjectService {
@@ -36,7 +35,9 @@ export class ProjectService {
     // TODO- convert/check organization id at frontend?
     // user might pass id (pk-from database) or urlid(set by user)
     if (dto.organizationId) {
-      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
+      dto.organizationId = (
+        await this.orgService.findOne(dto.organizationId)
+      ).id;
     }
     if (dto.slug) delete dto.slug;
 
@@ -47,7 +48,7 @@ export class ProjectService {
     //     basePost: {
     //       create: {
     //         title: dto.title,
-    //         postContent: `This post is automatically genereted for Project ${dto.title}.`,
+    //         postContent: `This post is automatically generated for Project ${dto.title}.`,
     //         authorId: userId,
     //         // slug,
     //       },
@@ -75,9 +76,8 @@ export class ProjectService {
     // });
 
     const post = await this.postService.createBasePost(userId, dto.title);
-    let project: Project;
     try {
-      project = await this.prisma.project.create({
+      return this.prisma.project.create({
         data: {
           basePostId: post.id,
           ...dto,
@@ -89,8 +89,6 @@ export class ProjectService {
         await this.postService.remove(post.id, userId);
       // new HandlePrismaDuplicauteError(error, 'urlid');
     }
-
-    return project;
   }
 
   async findAll(userid?: string) {

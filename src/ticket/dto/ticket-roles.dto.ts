@@ -9,25 +9,25 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class TicketEnumDto {
   @IsEnum(TicketType)
   @IsOptional()
-  ticketType: TicketType;
+  ticketType?: TicketType;
 
   @IsEnum(TicketSeverity)
   @IsNotEmpty()
-  ticketSeverity: TicketSeverity;
+  ticketSeverity!: TicketSeverity;
 
   @IsEnum(TicketPriority)
   @IsNotEmpty()
-  ticketPriority: TicketPriority;
+  ticketPriority!: TicketPriority;
 }
 
 export class TicketAssignDto {
   @IsString()
   @IsNotEmpty()
-  username: string;
+  username!: string;
 }
 
 export class UpdateStatusDto {
   @IsEnum(TicketStatus)
   @IsNotEmpty()
-  ticketStatus: TicketStatus;
+  ticketStatus!: TicketStatus;
 }

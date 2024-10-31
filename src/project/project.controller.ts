@@ -9,8 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import { JwtAuthGuard } from 'src/common/guard';
-import { GetUser } from 'src/common/decorator';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -22,6 +20,8 @@ import { ProjectRole } from '@prisma/client';
 import { ProjectFeatureService } from './projectxfeature.service';
 import { ProjectFeatureDto } from './dto';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/common/guard';
+import { GetUser } from '@/common/decorator';
 
 @ApiTags('Project')
 @UseGuards(JwtAuthGuard)
@@ -41,7 +41,7 @@ export class ProjectController {
   findAll() {
     return this.projectService.findAll();
   }
-  // ############################# Contributors ########################
+
   @Get(':id/contributors')
   findContributor(
     @Param('id') id: string,
@@ -78,7 +78,6 @@ export class ProjectController {
     return this.projectService.removeContributor(id, dto, userid);
   }
 
-  // ############################# Features ########################
   @Get(':id/features')
   findFeatures(@Param('id') id: string) {
     return this.projectFeatures.findFeatures(id);

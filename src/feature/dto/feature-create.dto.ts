@@ -9,7 +9,7 @@ export class CreateFeatureDto {
   })
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'REQUIRED- description/content for the post',
@@ -17,7 +17,7 @@ export class CreateFeatureDto {
   })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @ApiProperty({
     description: 'OPTIONAL- the entire process to implement the feature',

@@ -15,11 +15,11 @@ export class CreateProjectDto {
 
   @IsAlphanumeric()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @IsString()
   @IsNotEmpty()
-  summary: string;
+  summary!: string;
 
   @IsAlphanumeric()
   @IsOptional()

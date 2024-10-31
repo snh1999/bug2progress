@@ -4,8 +4,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ChangeMemberRoleDto,
@@ -14,6 +12,8 @@ import {
 } from './dto';
 import * as ORG from './permissions';
 import { MemberType } from '@prisma/client';
+import { UserService } from '@/user/user.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class OrganizationService {
@@ -22,7 +22,6 @@ export class OrganizationService {
     private userService: UserService,
   ) {}
 
-  // ############################## create organization ############################
   async create(dto: CreateOrganizationDto, userid: string) {
     return this.prisma.organization.create({
       data: {
@@ -33,7 +32,6 @@ export class OrganizationService {
     });
   }
   // TODO - add updatelog and update org
-  // ############################ view all organization ############################
   async findAll() {
     const orgAll = await this.prisma.organization.findMany({});
     return {
@@ -41,10 +39,8 @@ export class OrganizationService {
     };
   }
 
-  // #################################### BY ID (o/:id) #############################
-  // ############################# view organization by id #########################
-  async findOne(urlOrId: string) {
-    const org = this.prisma.organization.findFirst({
+  findOne(urlOrId: string) {
+    return this.prisma.organization.findFirstOrThrow({
       where: {
         OR: [
           {
@@ -56,14 +52,10 @@ export class OrganizationService {
         ],
       },
     });
-    if (!org) throw new NotFoundException('404 Not found');
-    return org;
   }
 
-  // ############################# view all members of org #########################
-  async viewAllMembers(orgurl: string) {
-    // using another model, so we have to get the ID
-    const orgId = await this.getOrgId(orgurl);
+  async viewAllMembers(orgUrl: string) {
+    const orgId = await this.getOrgId(orgUrl);
     return this.prisma.orgMembers.findMany({
       where: {
         organizationId: orgId,
@@ -74,8 +66,8 @@ export class OrganizationService {
       },
     });
   }
-  async viewMembersByRole(orgurl: string, memberType: MemberType) {
-    const orgId = await this.getOrgId(orgurl);
+  async viewMembersByRole(orgUrl: string, memberType: MemberType) {
+    const orgId = await this.getOrgId(orgUrl);
     return this.prisma.orgMembers.findMany({
       where: {
         AND: [{ organizationId: orgId }, { memberType }],
@@ -85,23 +77,11 @@ export class OrganizationService {
       },
     });
   }
-  /*{
-          select: {
-            profile: {
-              select: {
-                username: true,
-                name: true,
-                photo: true,
-              },
-            },
-          },
-        },
-  */
-  // ############################# view posts #############################
-  async findPosts(orgurl: string) {
+
+  async findPosts(orgUrl: string) {
     const org = await this.prisma.organization.findUnique({
       where: {
-        urlid: orgurl,
+        urlid: orgUrl,
       },
       include: {
         post: true,
@@ -110,11 +90,10 @@ export class OrganizationService {
     if (!org) return new NotFoundException('404 Not found');
     return org.post;
   }
-  // ############################# view projects #############################
-  async findProjects(orgurl: string) {
+  async findProjects(orgUrl: string) {
     const org = await this.prisma.organization.findUnique({
       where: {
-        urlid: orgurl,
+        urlid: orgUrl,
       },
       include: {
         project: true,
@@ -124,18 +103,17 @@ export class OrganizationService {
     return org.project;
   }
 
-  // ############################# update details organization (admin/owner can) #########################
   async update(
-    orgurl: string,
+    orgUrl: string,
     updateOrganizationDto: UpdateOrganizationDto,
     userid: string,
   ) {
     // organization not found handled here
-    await this.isUserAuthorized(orgurl, userid, ORG.UPDATE_PERMISSION);
+    await this.isUserAuthorized(orgUrl, userid, ORG.UPDATE_PERMISSION);
     // user is authorized- update org
     return this.prisma.organization.update({
       where: {
-        urlid: orgurl,
+        urlid: orgUrl,
       },
       data: {
         ...updateOrganizationDto,
@@ -143,7 +121,6 @@ export class OrganizationService {
     });
   }
 
-  // ############################# delete organization (only owner can) #########################
   async remove(orgid: string, userid: string) {
     // username to id
     await this.isUserAuthorized(orgid, userid, ORG.DELETE_PERMISSION);
@@ -158,18 +135,18 @@ export class OrganizationService {
   }
 
   async changeMemberRole(
-    orgurl: string,
+    orgUrl: string,
     dto: ChangeMemberRoleDto,
     userid: string,
   ) {
     if (dto.role == 'ADMIN')
-      await this.isUserAuthorized(orgurl, userid, ORG.ADMIN_PERMISSION);
+      await this.isUserAuthorized(orgUrl, userid, ORG.ADMIN_PERMISSION);
     else if (dto.role == 'MODERATOR')
-      await this.isUserAuthorized(orgurl, userid, ORG.MODERATOR_PERMISSION);
+      await this.isUserAuthorized(orgUrl, userid, ORG.MODERATOR_PERMISSION);
 
     const idToAdd = await this.userService.getIdFromUsername(dto.userName);
     if (!idToAdd) return new NotFoundException('Invalid username');
-    const orgId = await this.getOrgId(orgurl);
+    const orgId = await this.getOrgId(orgUrl);
 
     return this.prisma.orgMembers.update({
       where: {
@@ -184,9 +161,8 @@ export class OrganizationService {
     });
   }
 
-  // ############################# join organization ##########################
-  async joinOrganization(orgurl: string, userid: string) {
-    const organizationId = await this.getOrgId(orgurl);
+  async joinOrganization(orgUrl: string, userid: string) {
+    const organizationId = await this.getOrgId(orgUrl);
     // check if it is owner
     try {
       await this.prisma.orgMembers.create({
@@ -202,16 +178,15 @@ export class OrganizationService {
       ) {
         throw new BadRequestException('User already member of organization');
       }
-      throw new BadRequestException(error.message);
+      throw new BadRequestException(error);
     }
     return {
       message: 'Joined Organization successfully',
     };
   }
 
-  // ############################# leave organization ##########################
-  async removeMember(orgurl: string, userid: string) {
-    const organizationId = await this.getOrgId(orgurl);
+  async removeMember(orgUrl: string, userid: string) {
+    const organizationId = await this.getOrgId(orgUrl);
     await this.prisma.orgMembers.delete({
       where: {
         organizationId_userId: {
@@ -225,25 +200,22 @@ export class OrganizationService {
       message: 'User No longer part of Organization',
     };
   }
-  // ############################# remove member (by admin/moderator) ##########################
-  async removeMemberBy(orgurl: string, userToRemove: string, userid: string) {
-    await this.isUserAuthorized(orgurl, userid, ORG.REMOVE_MEMBER_PERMISSION);
+  async removeMemberBy(orgUrl: string, userToRemove: string, userid: string) {
+    await this.isUserAuthorized(orgUrl, userid, ORG.REMOVE_MEMBER_PERMISSION);
 
     const idToRemove = await this.userService.getIdFromUsername(userToRemove);
-    return this.removeMember(orgurl, idToRemove);
+    return this.removeMember(orgUrl, idToRemove);
   }
 
-  // ############################# find id from url ##########################
   async getOrgId(urlOrId: string) {
     const org = await this.findOne(urlOrId);
     return org.id;
   }
 
-  // ############################# helper functions ##########################
-  async getMemberIdsByRole(orgurl: string, memberType: MemberType) {
+  async getMemberIdsByRole(orgUrl: string, memberType: MemberType) {
     const orgRoles = await this.prisma.organization.findUnique({
       where: {
-        urlid: orgurl,
+        urlid: orgUrl,
       },
       select: {
         members: {
@@ -253,13 +225,13 @@ export class OrganizationService {
         },
       },
     });
-    return orgRoles.members;
+    return orgRoles?.members;
   }
 
-  async getOwnerId(orgurl: string) {
+  async getOwnerId(orgUrl: string) {
     const orgRoles = await this.prisma.organization.findUnique({
       where: {
-        urlid: orgurl,
+        urlid: orgUrl,
       },
       select: {
         ownerId: true,
@@ -273,15 +245,19 @@ export class OrganizationService {
   // nothing = admin
   // admin = admin + owner
   // moderator = admin + owner + moderators
-  async isUserAuthorized(orgurl, userid, authorizedPerson?: ORG.OrgRoles) {
-    if (userid == (await this.getOwnerId(orgurl))) return;
+  async isUserAuthorized(
+    orgUrl: string,
+    userid: string,
+    authorizedPerson?: ORG.OrgRoles,
+  ) {
+    if (userid == (await this.getOwnerId(orgUrl))) return;
     else if (authorizedPerson == ORG.OrgRoles.ADMIN) {
-      const adminObj = await this.getMemberIdsByRole(orgurl, MemberType.ADMIN);
+      const adminObj = await this.getMemberIdsByRole(orgUrl, MemberType.ADMIN);
       if (this.checkElementAtObj(adminObj, userid)) return;
     } else if (authorizedPerson == ORG.OrgRoles.MODERATOR) {
-      const adminObj = await this.getMemberIdsByRole(orgurl, MemberType.ADMIN);
+      const adminObj = await this.getMemberIdsByRole(orgUrl, MemberType.ADMIN);
       const modObj = await this.getMemberIdsByRole(
-        orgurl,
+        orgUrl,
         MemberType.MODERATOR,
       );
       if (
@@ -295,15 +271,15 @@ export class OrganizationService {
     );
   }
 
-  checkElementAtObj(arrObj: any, value) {
-    let ret: boolean;
-    arrObj.forEach((element) => {
-      if (element.userId == value) {
-        ret = true;
+  checkElementAtObj(arrObj: any, value: string) {
+    // let ret: boolean;
+    arrObj.forEach((element: any) => {
+      if (element.userId === value) {
+        // ret = true;
         return;
       }
-      ret = false;
+      // ret = false;
     });
-    return ret;
+    return true;
   }
 }

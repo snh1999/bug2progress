@@ -11,9 +11,9 @@ import {
 import { FeatureService } from './feature.service';
 import { CreateFeatureDto } from './dto/feature-create.dto';
 import { UpdateFeatureDto } from './dto/feature-update.dto';
-import { GetUser } from 'src/common/decorator';
-import { JwtAuthGuard } from 'src/common/guard';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/common/guard';
+import { GetUser } from '@/common/decorator';
 
 @ApiTags('Features')
 @UseGuards(JwtAuthGuard)

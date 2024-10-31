@@ -3,19 +3,19 @@ import { TicketType } from '@prisma/client';
 export class CreateTicketDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @IsEnum(TicketType)
   @IsNotEmpty()
-  ticketType: TicketType;
+  ticketType!: TicketType;
 
   @IsString()
   @IsNotEmpty()
-  projectId: string; // maybe url
+  projectId!: string;
 
   @IsString()
   @IsOptional()

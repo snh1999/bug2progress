@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { ProjectController } from './project.controller';
-import { OrganizationModule } from 'src/organization/organization.module';
-import { PostModule } from 'src/post/post.module';
-import { UserModule } from 'src/user/user.module';
 import { ProjectFeatureService } from './projectxfeature.service';
+import { OrganizationModule } from '@/organization/organization.module';
+import { PostModule } from '@/post/post.module';
+import { UserModule } from '@/user/user.module';
 
 @Module({
   controllers: [ProjectController],

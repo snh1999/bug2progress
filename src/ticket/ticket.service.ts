@@ -5,7 +5,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TicketStatus } from '@prisma/client';
-import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectService } from '../project/project.service';
 import {
@@ -15,6 +14,7 @@ import {
   UpdateStatusDto,
   UpdateTicketDto,
 } from './dto';
+import { UserService } from '@/user/user.service';
 
 @Injectable()
 export class TicketService {
@@ -119,7 +119,7 @@ export class TicketService {
     if (dto instanceof UpdateStatusDto && dto.ticketStatus == 'PENDING_CLOSE')
       await this.updateStatus(ticketid, dto, userId);
     // user is not lead/manager or owner
-    if (!(project.ownerId == userId || userRole.role != 'DEVELOPER'))
+    if (!(project.ownerId == userId || userRole?.role != 'DEVELOPER'))
       throw new UnauthorizedException('You are not owner or manager');
 
     // update role
@@ -143,7 +143,7 @@ export class TicketService {
       message: 'delete successful',
     };
   }
-  // !No verification DONE- HAVE TO BE CHECKED BEFORE FUNCTION IS CALLED
+
   async verifyTicket(id: string, dto: TicketEnumDto, userid: string) {
     await this.prisma.ticket.update({
       where: {
@@ -154,14 +154,13 @@ export class TicketService {
       },
     });
 
-    // find roles and check status - if pending, then proceed
     const ticketRoles = await this.prisma.ticketRoles.findUnique({
       where: {
         ticketId: id,
       },
     });
 
-    if (ticketRoles.ticketStatus == TicketStatus.PENDING) {
+    if (ticketRoles?.ticketStatus == TicketStatus.PENDING) {
       await this.prisma.ticketRoles.update({
         where: {
           ticketId: id,
@@ -196,11 +195,10 @@ export class TicketService {
       },
     });
 
-    // done working, ask to close
     if (
       dto.ticketStatus == TicketStatus.PENDING_CLOSE &&
-      ticketRoles.ticketStatus == TicketStatus.ASSIGNED &&
-      ticketRoles.developerId == userid
+      ticketRoles?.ticketStatus == TicketStatus.ASSIGNED &&
+      ticketRoles?.developerId == userid
     ) {
       return this.prisma.ticketRoles.update({
         where: {

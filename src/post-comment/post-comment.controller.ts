@@ -10,23 +10,23 @@ import {
 } from '@nestjs/common';
 import { PostCommentService } from './post-comment.service';
 import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
-import { GetUser } from 'src/common/decorator';
-import { JwtAuthGuard } from 'src/common/guard';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/common/guard';
+import { GetUser } from '@/common/decorator';
 
 @ApiTags('Post-Comment')
 @UseGuards(JwtAuthGuard)
-@Controller('post/comment/:postid')
+@Controller('post/comment/:postId')
 export class PostCommentController {
   constructor(private readonly postCommentService: PostCommentService) {}
 
   @Post()
   create(
-    @Param('postid') postid: string,
+    @Param('postId') postId: string,
     @Body() dto: CreatePostCommentDto,
-    @GetUser('id') userid: string,
+    @GetUser('id') userId: string,
   ) {
-    return this.postCommentService.create(postid, dto, userid);
+    return this.postCommentService.create(postId, dto, userId);
   }
 
   @Get()
@@ -43,13 +43,13 @@ export class PostCommentController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdatePostCommentDto,
-    @GetUser('id') userid: string,
+    @GetUser('id') userId: string,
   ) {
-    return this.postCommentService.update(id, dto, userid);
+    return this.postCommentService.update(id, dto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @GetUser('id') userid: string) {
-    return this.postCommentService.remove(id, userid);
+  remove(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.postCommentService.remove(id, userId);
   }
 }

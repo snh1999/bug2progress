@@ -1,16 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserService } from '../user/user.service';
 import { CreateFeatureDto, UpdateFeatureDto } from './dto';
 
 @Injectable()
 export class FeatureService {
-  constructor(
-    private prisma: PrismaService,
-    private postService: PostService,
-    private userService: UserService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateFeatureDto, userId: string) {
     return this.prisma.features.create({

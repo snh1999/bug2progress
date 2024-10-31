@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { TicketController } from './ticket.controller';
-import { UserModule } from 'src/user/user.module';
-import { ProjectModule } from 'src/project/project.module';
+import { UserModule } from '@/user/user.module';
+import { ProjectModule } from '@/project/project.module';
 
 @Module({
   controllers: [TicketController],

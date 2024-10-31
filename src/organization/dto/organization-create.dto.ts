@@ -3,13 +3,13 @@ import { IsNotEmpty, IsString, IsAlphanumeric } from 'class-validator';
 export class CreateOrganizationDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @IsAlphanumeric()
   @IsNotEmpty()
-  urlid: string;
+  urlid!: string;
 }

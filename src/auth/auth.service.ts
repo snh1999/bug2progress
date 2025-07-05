@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -18,6 +17,17 @@ import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { EmailService } from './email.service';
 import { Response } from 'express';
+import {
+  EMAIL_SEND_ERROR_MESSAGE,
+  EMAIL_SEND_SUCCESS_MESSAGE,
+  INVALID_EMAIL_MESSAGE,
+  INVALID_TOKEN_MESSAGE,
+  LOGIN_ERROR_MESSAGE,
+  LOGIN_SUCCESS_MESSAGE,
+  PASSWORD_UPDATE_SUCCESS_MESSAGE,
+  PROFILE_NOT_FOUND_MESSAGE,
+  WRONG_PASSWORD_MESSAGE,
+} from './auth.constants';
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,7 +41,7 @@ export class AuthService {
     const user = await this.findUserByEmail(dto.email);
 
     if (!user || !(await argon.verify(user.password, dto.password))) {
-      throw new NotFoundException('Email or password is Incorrect');
+      throw new NotFoundException(LOGIN_ERROR_MESSAGE);
     }
 
     if (!user.isActive) {
@@ -40,7 +50,7 @@ export class AuthService {
 
     const profile = user.profile;
     if (!profile) {
-      throw new NotFoundException('Can not find user, something went wrong');
+      throw new NotFoundException(PROFILE_NOT_FOUND_MESSAGE);
     }
 
     return await this.sendCookie(res, {
@@ -87,7 +97,7 @@ export class AuthService {
   async forgotPassword(host: string, email: string) {
     const user = await this.findUserByEmail(email);
     if (!user) {
-      throw new NotFoundException('No user with that email');
+      throw new NotFoundException(INVALID_EMAIL_MESSAGE);
     }
 
     const token = await this.generatePasswordResetToken(email);
@@ -105,12 +115,12 @@ export class AuthService {
     } catch (err) {
       console.log(err);
       await this.updatePasswordResetFields(email);
-      throw new InternalServerErrorException(
-        'Error sending email. Please try again later',
-      );
+      throw new InternalServerErrorException(EMAIL_SEND_ERROR_MESSAGE);
     }
 
-    return 'Email sent Successfully, Please check your email';
+    return {
+      message: EMAIL_SEND_SUCCESS_MESSAGE,
+    };
   }
 
   private async generatePasswordResetToken(email: string) {
@@ -138,12 +148,14 @@ export class AuthService {
       !user.passwordTokenExpiry ||
       user.passwordTokenExpiry.getTime() < Date.now()
     ) {
-      throw new BadRequestException('Token invalid or expired, Try again');
+      throw new BadRequestException(INVALID_TOKEN_MESSAGE);
     }
 
     await this.updatePassword(user.id, password);
 
-    return 'Password Updated Successfully';
+    return {
+      message: PASSWORD_UPDATE_SUCCESS_MESSAGE,
+    };
   }
 
   async changePassword(
@@ -156,7 +168,7 @@ export class AuthService {
     });
 
     if (!(await argon.verify(user.password, dto.oldPassword))) {
-      throw new ForbiddenException('Please input correct password');
+      throw new BadRequestException(WRONG_PASSWORD_MESSAGE);
     }
 
     const password = await argon.hash(dto.newPassword);
@@ -178,7 +190,7 @@ export class AuthService {
     res.cookie('token', token, cookieOptions);
     return {
       token,
-      message: 'Logged In successfully',
+      message: LOGIN_SUCCESS_MESSAGE,
     };
   }
 

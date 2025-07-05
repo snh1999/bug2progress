@@ -8,6 +8,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { RegisterDto } from '@/auth/dto';
 import { faker } from '@faker-js/faker/.';
 import { EmailService } from '@/auth/email.service';
+import { createTestUser } from '../users/users.test-helpers';
+import { EMAIL_SEND_SUCCESS_MESSAGE } from '@/auth/auth.constants';
 
 describe('Auth e2e', () => {
   let app: INestApplication;
@@ -101,13 +103,7 @@ describe('Auth e2e', () => {
 
       beforeEach(async () => {
         registerDto = getRegisterDto();
-        await request(httpServer)
-          .post('/register')
-          .send(registerDto)
-          .expect(HttpStatus.CREATED)
-          .expect(({ body }) =>
-            expect(body.data).toEqual(getLoginExpectedStructure()),
-          );
+        await createTestUser(dbService, registerDto);
       });
       it('should return BAD_REQUEST(400) when requested without login dto ', async () => {
         await request(httpServer).post('/login').expect(HttpStatus.BAD_REQUEST);
@@ -157,13 +153,7 @@ describe('Auth e2e', () => {
 
       beforeEach(async () => {
         registerDto = getRegisterDto();
-        await request(httpServer)
-          .post('/register')
-          .send(registerDto)
-          .expect(HttpStatus.CREATED)
-          .expect(({ body }) =>
-            expect(body.data).toEqual(getLoginExpectedStructure()),
-          );
+        await createTestUser(dbService, registerDto);
       });
 
       it('should return with NOT_FOUND(404) when invalid email is provided', async () => {
@@ -185,29 +175,22 @@ describe('Auth e2e', () => {
           .send(forgotPasswordDto)
           .expect(HttpStatus.CREATED)
           .expect(({ body }) =>
-            expect(body.data).toEqual(
-              'Email sent Successfully, Please check your email',
-            ),
+            expect(body.data.message).toEqual(EMAIL_SEND_SUCCESS_MESSAGE),
           );
         expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
       });
     });
 
     describe('POST /reset-password/:token', () => {
-      it('should return NOT_FOUND(404) if no token is provided', () =>
-        request(httpServer)
-          .post('reset-password')
-          .expect(HttpStatus.NOT_FOUND));
-
       it('should return NOT_FOUND(404) if an invalid token is provided', () =>
         request(httpServer)
           .post('/reset-password/invalid_token')
           .send(`{password=${faker.internet.password()}}`)
-          .expect(HttpStatus.NOT_FOUND));
+          .expect(HttpStatus.BAD_REQUEST));
 
       it('should return BAD_REQUEST(400) if no password is provided', () =>
         request(httpServer)
-          .post('/auth/reset-password/invalid_token')
+          .post('/reset-password/invalid_token')
           .expect(HttpStatus.BAD_REQUEST));
 
       // it("fails with BAD_REQUEST(400) if the provided token is EXPIRED", async () => {

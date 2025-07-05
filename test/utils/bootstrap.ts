@@ -1,7 +1,7 @@
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ValidationPipe } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
 export const bootstrapTestServer = async () => {
@@ -15,12 +15,12 @@ export const bootstrapTestServer = async () => {
   await app.init();
 
   const prismaService = app.get<PrismaService>(PrismaService);
-  const jwtService = app.get<JwtService>(JwtService);
+  const configService = app.get<ConfigService>(ConfigService);
 
   return {
     appInstance: app,
     httpServerInstance: httpServer,
     dbServiceInstance: prismaService,
-    jwtServiceInstance: jwtService,
+    config: configService,
   };
 };

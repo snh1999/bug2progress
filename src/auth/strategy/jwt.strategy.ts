@@ -7,7 +7,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JWTStrategy extends PassportStrategy(Strategy) {
-  constructor(config: ConfigService, private prisma: PrismaService) {
+  constructor(
+    config: ConfigService,
+    private prisma: PrismaService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         JWTStrategy.extractJWT,
@@ -30,13 +33,13 @@ export class JWTStrategy extends PassportStrategy(Strategy) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
     });
+
     if (!user) {
       throw new UnauthorizedException(
         'User does not exist. Please Log in to continue',
       );
     }
-    // check if password was changed after the token was issued
-    const passwordChangedAt = user.passwordChangedAt.getTime() / 1000 - 1; // parseInt(user.passwordChangedAt.getTime() / 1000);
+    const passwordChangedAt = user.passwordChangedAt.getTime() / 1000 - 1;
     if (payload.iat < passwordChangedAt)
       throw new UnauthorizedException('Please Log in again to continue');
     return {

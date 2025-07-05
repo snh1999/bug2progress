@@ -1,23 +1,11 @@
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '@/prisma/prisma.service';
-import { User } from '@prisma/client';
-import { createTestUser } from '../users/users.test-helpers';
 import { getRegisterDto } from '../auth/auth.test-data';
+import request from 'supertest';
+import { THttpServer } from '../utils/types';
 
-export async function getAccessToken(
-  prisma: PrismaService,
-  jwtService: JwtService,
-  user?: User,
-) {
-  const userData = getRegisterDto();
+export async function getAccessToken(httpServer: THttpServer) {
+  const {
+    body: { data },
+  } = await request(httpServer).post('/register').send(getRegisterDto());
 
-  if (!user) {
-    user = await createTestUser(prisma, userData);
-  }
-
-  return jwtService.sign({
-    id: user.id,
-    name: userData.name,
-    username: userData.username,
-  });
+  return data.token;
 }

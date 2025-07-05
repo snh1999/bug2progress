@@ -66,7 +66,7 @@ export class PostService {
     return post;
   }
 
-  // TODO- check orgid at frontend?
+  // TODO- check if user has org permissions
   async update(id: string, dto: UpdatePostDto, userid: string) {
     if (dto.organizationId) {
       dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
@@ -106,10 +106,11 @@ export class PostService {
 
   // ########################### helper function #################
 
-  async createBasePost(userId: string, title: string) {
+  async createBasePost(userId: string, title: string, options?: UpdatePostDto) {
     return this.prisma.post.create({
       data: {
         title,
+        ...options,
         postContent: 'This post is automatically generated.',
         authorId: userId,
       },

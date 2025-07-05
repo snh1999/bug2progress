@@ -152,7 +152,7 @@ model Project {
   ownerId String
 
   // status - in dev | released version | depricated
-  // 			project page shows the 
+  // 			project page shows the
   // 						project details
   // 						issues associated
   // 						different roles
@@ -312,7 +312,7 @@ enum TicketStatus {
   PENDING
   VERIFIED // varified at has something
   ASSIGNED // assigned at has value
-  PENDING_CLOSE // developer ask for that 
+  PENDING_CLOSE // developer ask for that
   CLOSED // closed at has value
 }
 

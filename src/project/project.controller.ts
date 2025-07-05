@@ -57,7 +57,7 @@ export class ProjectController {
     @Body() dto: CreateContributorDto,
     @GetUser('id') userid: string,
   ) {
-    return this.projectService.createContributor(id, dto, userid);
+    return this.projectService.addContributor(id, dto, userid);
   }
 
   @Patch(':id/contributors')
@@ -66,7 +66,7 @@ export class ProjectController {
     @Body() dto: UpdateContributorDto,
     @GetUser('id') userid: string,
   ) {
-    return this.projectService.updateContributor(id, dto, userid);
+    return this.projectService.updateContributorRole(id, dto, userid);
   }
 
   @Delete(':id/contributors')

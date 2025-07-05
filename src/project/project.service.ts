@@ -1,10 +1,5 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ProjectRole } from '@prisma/client';
-import { OrganizationService } from '../organization/organization.service';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
@@ -15,80 +10,35 @@ import {
   UpdateContributorDto,
   DeleteContributorDto,
 } from './dto';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ProjectService {
   constructor(
     private prisma: PrismaService,
-    private orgService: OrganizationService,
     private postService: PostService,
     private userService: UserService,
   ) {}
 
   async create(dto: CreateProjectDto, userId: string) {
-    // let slug;
-    // if (dto.slug) {
-    //   slug = dto.slug;
-    //   delete dto.slug;
+    // if (dto.organizationId) {
+    //   dto.organizationId = (
+    //     await this.orgService.findOne(dto.organizationId)
+    //   ).id;
     // }
-    // TODO- convert/check organization id at frontend?
-    // user might pass id (pk-from database) or urlid(set by user)
-    if (dto.organizationId) {
-      dto.organizationId = (
-        await this.orgService.findOne(dto.organizationId)
-      ).id;
-    }
-    if (dto.slug) delete dto.slug;
 
-    // return this.prisma.project.create({
-    //   data: {
-    //     ...dto,
-    //     ownerId: userId,
-    //     basePost: {
-    //       create: {
-    //         title: dto.title,
-    //         postContent: `This post is automatically generated for Project ${dto.title}.`,
-    //         authorId: userId,
-    //         // slug,
-    //       },
-    //     },
-    //   },
-    // });
+    return this.prisma.$transaction(async (prisma) => {
+      const post = await this.postService.createBasePost(userId, dto.title, {
+        slug: dto.slug,
+      });
 
-    // add a new post as well with base post
-    // this.prisma.project.create({
-    //   data: {
-    //     title: dto.title,
-    //     summary: dto.summary,
-    //     organizationId: dto.organizationId,
-    //     urlid: dto.urlid,
-    //     ownerId: userId,
-    //     basePost: {
-    //       create: {
-    //         title: dto.title,
-    //         postContent: `This post is automatically genereted for Project ${dto.title}.`,
-    //         authorId: userId,
-    //         // slug,
-    //       },
-    //     },
-    //   },
-    // });
-
-    const post = await this.postService.createBasePost(userId, dto.title);
-    try {
-      return this.prisma.project.create({
+      return prisma.project.create({
         data: {
-          basePostId: post.id,
           ...dto,
           ownerId: userId,
+          basePostId: post.id,
         },
       });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError)
-        await this.postService.remove(post.id, userId);
-      // new HandlePrismaDuplicauteError(error, 'urlid');
-    }
+    });
   }
 
   async findAll(userid?: string) {
@@ -102,52 +52,38 @@ export class ProjectService {
   }
 
   async findOne(id: string) {
-    const project = await this.prisma.project.findFirst({
+    return this.prisma.project.findFirstOrThrow({
       where: {
-        OR: [
-          {
-            id,
-          },
-          {
-            urlid: id,
-          },
-        ],
+        OR: [{ id }, { urlid: id }],
       },
-    });
-    if (!project) throw new NotFoundException('404 Not found');
-    return project;
-  }
-
-  // TODO- check organization id at frontend?
-  async update(id: string, dto: UpdateProjectDto, userid: string) {
-    if (dto.organizationId) {
-      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
-    }
-    const project = await this.findOne(id);
-    return this.prisma.project.updateMany({
-      where: {
-        AND: [{ id: project.id }, { ownerId: userid }],
-      },
-      data: {
-        ...dto,
-      },
+      include: { basePost: true },
     });
   }
 
-  async remove(id: string, userid: string) {
-    const project = await this.findOne(id);
-    if (project.ownerId != userid)
-      throw new UnauthorizedException('User not owner');
-    await this.prisma.post.delete({
-      where: {
-        id: project.basePostId,
-      },
+  async update(id: string, dto: UpdateProjectDto, userId: string) {
+    // if (dto.organizationId) {
+    //   dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
+    // }
+    await this.checkPermission(id, userId);
+
+    return this.prisma.project.update({
+      where: { id, ownerId: userId },
+      data: { ...dto },
     });
-    // await this.prisma.project.delete({
-    //   where: {
-    //     id: project.id,
-    //   },
-    // });
+  }
+
+  async remove(id: string, userId: string) {
+    const project = await this.checkPermission(id, userId);
+
+    await this.prisma.$transaction([
+      this.prisma.post.delete({
+        where: { id: project.basePostId },
+      }),
+      this.prisma.project.delete({
+        where: { id: project.id },
+      }),
+    ]);
+
     return {
       message: 'delete successful',
     };
@@ -155,83 +91,80 @@ export class ProjectService {
 
   async findContributor(url: string, role?: ProjectRole) {
     const project = await this.findOne(url);
-    if (role)
-      return this.prisma.projectContributor.findMany({
-        where: {
-          AND: [{ projectId: project.id }, { role }],
-        },
-      });
+
     return this.prisma.projectContributor.findMany({
       where: {
         projectId: project.id,
+        role,
       },
     });
   }
 
   // TODO - check userid at frontend?
-  async createContributor(
-    url: string,
-    dto: CreateContributorDto,
-    userid: string,
-  ) {
-    const project = await this.findOne(url);
-    const idtoadd = await this.userService.getIdFromUsername(dto.username);
-    if (project.ownerId != userid)
-      throw new UnauthorizedException('You are not authorized for the action');
+  async addContributor(id: string, dto: CreateContributorDto, userId: string) {
+    const project = await this.checkPermission(id, userId);
+    const contributorId = await this.userService.getIdFromUsername(
+      dto.username,
+    );
 
     return this.prisma.projectContributor.create({
       data: {
-        userId: idtoadd,
+        userId: contributorId,
         projectId: project.id,
         role: dto.role,
       },
     });
   }
 
-  async updateContributor(
-    url: string,
+  async updateContributorRole(
+    id: string,
     dto: UpdateContributorDto,
-    userid: string,
+    userId: string,
   ) {
-    const project = await this.findOne(url);
-    const idtoadd = await this.userService.getIdFromUsername(dto.username);
-    if (project.ownerId != userid)
-      throw new UnauthorizedException('You are not authorized for the action');
+    const project = await this.checkPermission(id, userId);
+    const contributorId = await this.userService.getIdFromUsername(
+      dto.username,
+    );
 
-    return await this.prisma.projectContributor.update({
+    return this.prisma.projectContributor.update({
       where: {
         projectId_userId: {
           projectId: project.id,
-          userId: idtoadd,
+          userId: contributorId,
         },
       },
-      data: {
-        role: dto.role,
-      },
+      data: { ...dto },
     });
   }
 
   async removeContributor(
-    url: string,
+    id: string,
     dto: DeleteContributorDto,
-    userid: string,
+    userId: string,
   ) {
-    const project = await this.findOne(url);
-    const idtoadd = await this.userService.getIdFromUsername(dto.username);
-    if (project.ownerId != userid)
-      throw new UnauthorizedException('You are not authorized for the action');
+    const project = await this.checkPermission(id, userId);
+    const contributorId = await this.userService.getIdFromUsername(
+      dto.username,
+    );
 
     await this.prisma.projectContributor.delete({
       where: {
         projectId_userId: {
           projectId: project.id,
-          userId: idtoadd,
+          userId: contributorId,
         },
       },
     });
 
-    return {
-      message: 'Delete successful',
-    };
+    return { message: 'Delete successful' };
+  }
+
+  async checkPermission(projectId: string, userId: string) {
+    const project = await this.findOne(projectId);
+
+    if (project.ownerId != userId)
+      throw new UnauthorizedException('You are not authorized for the action');
+
+    return project;
   }
 }

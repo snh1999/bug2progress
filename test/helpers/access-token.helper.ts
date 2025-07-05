@@ -1,21 +1,23 @@
-import { HttpStatus } from '@nestjs/common';
-
-import request from 'supertest';
-
-// import { MOCK_AUTH_EMAIL, MOCK_AUTH_PASS } from "../../auth/auth.mock";
-import { bootstrapTestServer } from '../utils/bootstrap';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '@/prisma/prisma.service';
+import { User } from '@prisma/client';
+import { createTestUser } from '../users/users.test-helpers';
+import { getRegisterDto } from '../auth/auth.test-data';
 
 export async function getAccessToken(
-  httpServer: Awaited<
-    ReturnType<typeof bootstrapTestServer>
-  >['httpServerInstance'],
-  //   email = MOCK_AUTH_EMAIL,
-  //   password = MOCK_AUTH_PASS,
+  prisma: PrismaService,
+  jwtService: JwtService,
+  user?: User,
 ) {
-  const { body } = await request(httpServer)
-    .post('/auth/login')
-    // .send({ email, password })
-    .expect(HttpStatus.CREATED);
+  const userData = getRegisterDto();
 
-  return body.data.accessToken;
+  if (!user) {
+    user = await createTestUser(prisma, userData);
+  }
+
+  return jwtService.sign({
+    id: user.id,
+    name: userData.name,
+    username: userData.username,
+  });
 }

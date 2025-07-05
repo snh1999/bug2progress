@@ -9,7 +9,7 @@ import { RegisterDto } from '@/auth/dto';
 import { faker } from '@faker-js/faker/.';
 import { EmailService } from '@/auth/email.service';
 
-describe('App e2e', () => {
+describe('Auth e2e', () => {
   let app: INestApplication;
   let httpServer: THttpServer;
   let dbService: PrismaService;

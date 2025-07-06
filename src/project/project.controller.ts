@@ -25,7 +25,7 @@ import { GetUser } from '@/common/decorator';
 
 @ApiTags('Project')
 @UseGuards(JwtAuthGuard)
-@Controller('project')
+@Controller('projects')
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
@@ -38,8 +38,27 @@ export class ProjectController {
   }
 
   @Get()
-  findAll() {
-    return this.projectService.findAll();
+  findAll(@GetUser('id') userid: string) {
+    return this.projectService.findAll(userid);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.projectService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateProjectDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.projectService.update(id, dto, userid);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @GetUser('id') userid: string) {
+    return this.projectService.remove(id, userid);
   }
 
   @Get(':id/contributors')
@@ -83,7 +102,6 @@ export class ProjectController {
     return this.projectFeatures.findFeatures(id);
   }
 
-  // TODO- add features option will lead to all features page
   @Post(':id/features/:featureId')
   addFeature(
     @Param('id') id: string,
@@ -93,7 +111,6 @@ export class ProjectController {
   ) {
     return this.projectFeatures.addFeature(id, featureId, userid, dto);
   }
-  // TODO- sort features stuff (Make new Copy for each project and No empty features), Update enabled
 
   @Delete(':id/features/:featureId')
   removeFeature(
@@ -102,24 +119,5 @@ export class ProjectController {
     @GetUser('id') userid: string,
   ) {
     return this.projectFeatures.removeFeature(id, featureId, userid);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projectService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateProjectDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.projectService.update(id, dto, userid);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string, @GetUser('id') userid: string) {
-    return this.projectService.remove(id, userid);
   }
 }

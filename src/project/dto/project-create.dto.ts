@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 import { ProjectStatus } from '@prisma/client';
 export class CreateProjectDto {
@@ -13,7 +14,8 @@ export class CreateProjectDto {
   @IsOptional()
   urlid?: string;
 
-  @IsAlphanumeric()
+  @IsString()
+  @MaxLength(100)
   @IsNotEmpty()
   title!: string;
 
@@ -34,6 +36,7 @@ export class CreateProjectDto {
   status?: ProjectStatus;
 
   @IsString()
+  @MaxLength(100)
   @IsOptional()
   slug?: string;
 }

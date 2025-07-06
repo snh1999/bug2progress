@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ProjectRole } from '@prisma/client';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,14 +26,16 @@ export class ProjectService {
     //   ).id;
     // }
 
+    const { slug, ...projectData } = dto;
+
     return this.prisma.$transaction(async (prisma) => {
       const post = await this.postService.createBasePost(userId, dto.title, {
-        slug: dto.slug,
+        slug,
       });
 
       return prisma.project.create({
         data: {
-          ...dto,
+          ...projectData,
           ownerId: userId,
           basePostId: post.id,
         },
@@ -47,6 +49,7 @@ export class ProjectService {
         where: {
           ownerId: userid,
         },
+        orderBy: { createdAt: 'desc' },
       });
     return await this.prisma.project.findMany({});
   }
@@ -76,11 +79,11 @@ export class ProjectService {
     const project = await this.checkPermission(id, userId);
 
     await this.prisma.$transaction([
-      this.prisma.post.delete({
-        where: { id: project.basePostId },
-      }),
       this.prisma.project.delete({
         where: { id: project.id },
+      }),
+      this.prisma.post.delete({
+        where: { id: project.basePostId },
       }),
     ]);
 
@@ -100,7 +103,6 @@ export class ProjectService {
     });
   }
 
-  // TODO - check userid at frontend?
   async addContributor(id: string, dto: CreateContributorDto, userId: string) {
     const project = await this.checkPermission(id, userId);
     const contributorId = await this.userService.getIdFromUsername(
@@ -163,7 +165,7 @@ export class ProjectService {
     const project = await this.findOne(projectId);
 
     if (project.ownerId != userId)
-      throw new UnauthorizedException('You are not authorized for the action');
+      throw new ForbiddenException('You are not authorized for the action');
 
     return project;
   }

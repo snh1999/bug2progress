@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -16,7 +17,7 @@ import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
 
 @ApiTags('Post')
-@Controller('post')
+@Controller('posts')
 @UseGuards(JwtAuthGuard)
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -27,8 +28,8 @@ export class PostController {
   }
 
   @Get()
-  findAll(@Body() dto: { username: string }) {
-    return this.postService.findAll(dto.username);
+  async findAll(@Query('user') user?: string) {
+    return this.postService.findAll(user);
   }
 
   @Get(':id')

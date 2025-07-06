@@ -36,7 +36,6 @@ export class CreateProjectDto {
   status?: ProjectStatus;
 
   @IsString()
-  @MaxLength(100)
   @IsOptional()
-  slug?: string;
+  postContent?: string;
 }

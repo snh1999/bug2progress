@@ -26,11 +26,11 @@ export class ProjectService {
     //   ).id;
     // }
 
-    const { slug, ...projectData } = dto;
+    const { postContent, ...projectData } = dto;
 
     return this.prisma.$transaction(async (prisma) => {
       const post = await this.postService.createBasePost(userId, dto.title, {
-        slug,
+        postContent,
       });
 
       return prisma.project.create({

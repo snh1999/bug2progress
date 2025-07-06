@@ -16,7 +16,7 @@ export class CreatePostDto {
   @IsOptional()
   summary?: string;
 
-  @IsAlphanumeric()
+  @IsString()
   @IsNotEmpty()
   @IsOptional()
   slug?: string;

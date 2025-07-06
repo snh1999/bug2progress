@@ -1,29 +1,21 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PrismaService } from '@/prisma/prisma.service';
-import { OrganizationService } from '@/organization/organization.service';
 
 @Injectable()
 export class PostService {
-  constructor(
-    private prisma: PrismaService,
-    private orgService: OrganizationService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  // TODO- check orgid at frontend?
   async create(dto: CreatePostDto, userId: string) {
-    if (dto.organizationId) {
-      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
-    }
+    // if (dto.organizationId) {
+    //   dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
+    // }
 
     if (!dto.summary) {
-      dto.summary = dto.postContent.split('.')[0];
+      dto.summary = dto.postContent.substring(0, 100) + '...';
     }
+
     const post = await this.prisma.post.create({
       data: {
         ...dto,
@@ -35,13 +27,28 @@ export class PostService {
     return post;
   }
 
-  async findAll(username?: string) {
-    if (username)
+  async findAll(user?: string) {
+    if (user)
       return this.prisma.post.findMany({
         where: {
           author: {
-            profile: {
-              username: username,
+            OR: [{ id: user }, { profile: { username: user } }],
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          author: {
+            select: {
+              joinedAt: true,
+              profile: {
+                select: {
+                  username: true,
+                  name: true,
+                  photo: true,
+                },
+              },
             },
           },
         },
@@ -50,58 +57,61 @@ export class PostService {
   }
 
   async findOne(id: string) {
-    const post = await this.prisma.post.findFirst({
+    return this.prisma.post.findFirstOrThrow({
       where: {
-        OR: [
-          {
-            id,
+        OR: [{ id }, { slug: id }],
+        project: null,
+        features: null,
+      },
+      include: {
+        author: {
+          select: {
+            joinedAt: true,
+            profile: {
+              select: {
+                username: true,
+                name: true,
+                photo: true,
+              },
+            },
           },
-          {
-            slug: id,
-          },
-        ],
+        },
       },
     });
-    if (!post) throw new NotFoundException('404 Not found');
-    return post;
   }
 
-  // TODO- check if user has org permissions
   async update(id: string, dto: UpdatePostDto, userid: string) {
-    if (dto.organizationId) {
-      dto.organizationId = await this.orgService.getOrgId(dto.organizationId);
-    }
     const post = await this.findOne(id);
 
-    return this.prisma.post.updateMany({
+    return this.prisma.post.update({
       where: {
-        AND: [{ id: post.id }, { authorId: userid }],
+        id: post.id,
+        authorId: userid,
       },
-      data: {
-        ...dto,
-      },
+      data: dto,
     });
   }
 
   async remove(id: string, userId: string) {
     const post = await this.findOne(id);
 
-    const deleted = await this.prisma.post.deleteMany({
+    if (!post) {
+      throw new BadRequestException(
+        'Post not found or it is associated with a project or feature',
+      );
+    }
+    await this.prisma.post.delete({
       where: {
-        AND: [
-          { id: post.id },
-          { authorId: userId },
-          { project: null },
-          { features: null },
-        ],
+        id: post.id,
+        authorId: userId,
+        project: null,
+        features: null,
       },
     });
-    console.log(deleted);
-    if (deleted.count == 1)
-      return {
-        message: 'removed successfully',
-      };
-    else throw new InternalServerErrorException('Something went wrong');
+
+    return {
+      message: 'Successfully Deleted',
+    };
   }
 
   // ########################### helper function #################
@@ -111,7 +121,7 @@ export class PostService {
       data: {
         title,
         ...options,
-        postContent: 'This post is automatically generated.',
+        postContent: options?.postContent ?? 'Automatically filled content.',
         authorId: userId,
       },
     });

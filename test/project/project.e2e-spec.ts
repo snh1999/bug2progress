@@ -87,35 +87,6 @@ describe('App e2e', () => {
           .send(invalidDtoWithoutTitle)
           .expect(HttpStatus.BAD_REQUEST);
       });
-
-      it('should return CONFLICT (409) when same dto with slug is used', async () => {
-        await request(httpServer)
-          .post('/projects')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(createProjectDto)
-          .expect(HttpStatus.CREATED);
-
-        await request(httpServer)
-          .post('/projects')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(createProjectDto)
-          .expect(HttpStatus.CONFLICT);
-      });
-
-      it('should return CREATED (201) when same dto without slug is used', async () => {
-        const { slug: _, ...createProjectDtoWithoutSlug } = createProjectDto;
-        await request(httpServer)
-          .post('/projects')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(createProjectDtoWithoutSlug)
-          .expect(HttpStatus.CREATED);
-
-        await request(httpServer)
-          .post('/projects')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(createProjectDtoWithoutSlug)
-          .expect(HttpStatus.CREATED);
-      });
     });
 
     describe('GET /projects', () => {

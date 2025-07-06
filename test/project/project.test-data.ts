@@ -8,7 +8,6 @@ export const getCreateProjectMockDto = (): CreateProjectDto => ({
   summary: faker.lorem.sentence(),
   isPublic: faker.datatype.boolean(),
   status: ProjectStatus.ACTIVE,
-  slug: faker.lorem.slug(),
 });
 
 export const createTestProject = async (

@@ -8,8 +8,12 @@ import {
   createTestProject,
   getCreateProjectMockDto,
 } from './project.test-data';
-import { getProjectExpectedStructure } from './project.expected-structure';
+import {
+  getProjectContributorExpectedStructure,
+  getProjectExpectedStructure,
+} from './project.expected-structure';
 import { CreateProjectDto, UpdateProjectDto } from '@/project/dto';
+import { getRegisterDto } from '../auth/auth.test-data';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -312,6 +316,353 @@ describe('App e2e', () => {
       it('should return NOT_FOUND (404) for non-existent project', async () => {
         await request(httpServer)
           .delete(`/projects/invalidId`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+    });
+  });
+
+  describe('Project Contributors (e2e)', () => {
+    let project: any;
+    let contributorData: any;
+    let contributorAccessToken: string;
+    let contributorUserId: string;
+
+    beforeEach(async () => {
+      project = await createTestProject(httpServer, accessToken);
+
+      await createTestProject(httpServer, accessToken);
+
+      contributorData = getRegisterDto();
+      contributorAccessToken = await getAccessToken(
+        httpServer,
+        contributorData,
+      );
+
+      contributorUserId = (await dbService.user.findFirst({
+        where: {
+          profile: {
+            username: contributorData.username,
+          },
+        },
+      }))!.id;
+    });
+
+    describe('POST /projects/:id/contributors', () => {
+      it('should return CREATED (201) and add a contributor', async () => {
+        const dto = {
+          username: contributorData.username,
+          role: 'DEVELOPER',
+        };
+
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.CREATED)
+          .expect(({ body }) =>
+            expect(body).toEqual(getProjectContributorExpectedStructure()),
+          );
+
+        const contributor = await dbService.projectContributor.findUnique({
+          where: {
+            projectId_userId: {
+              projectId: project.id,
+              userId: contributorUserId,
+            },
+          },
+        });
+        expect(contributor).toBeDefined();
+
+        await request(httpServer)
+          .get('/projects')
+          .set('Authorization', `Bearer ${contributorAccessToken}`)
+          .expect(HttpStatus.OK)
+          .expect(({ body }) => {
+            expect(body.length).toBeGreaterThanOrEqual(1);
+            expect(body).toEqual(
+              expect.arrayContaining([getProjectExpectedStructure()]),
+            );
+            expect(body[0].id).toBe(project.id);
+          });
+      });
+
+      it('should return BAD_REQUEST (400) for invalid role', async () => {
+        const dto = {
+          username: contributorData.username,
+          role: 'INVALID_ROLE',
+        };
+
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent user', async () => {
+        const dto = {
+          username: 'nonexistent',
+          role: 'DEVELOPER',
+        };
+
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('should return BAD_REQUEST (400) when required fields are missing', async () => {
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({})
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent project', async () => {
+        const dto = {
+          username: contributorData.username,
+          role: 'DEVELOPER',
+        };
+
+        await request(httpServer)
+          .post(`/projects/nonexistent/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('should return FORBIDDEN (403) when non-owner tries to add contributor', async () => {
+        const anotherUserToken = await getAccessToken(httpServer);
+
+        const dto = {
+          username: contributorData.username,
+          role: 'DEVELOPER',
+        };
+
+        await request(httpServer)
+          .post(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${anotherUserToken}`)
+          .send(dto)
+          .expect(HttpStatus.FORBIDDEN);
+      });
+    });
+
+    describe('GET /projects/:id/contributors', () => {
+      it('should return OK (200) with list of contributors', async () => {
+        await dbService.projectContributor.create({
+          data: {
+            projectId: project.id,
+            userId: contributorUserId,
+            role: 'DEVELOPER',
+          },
+        });
+
+        await request(httpServer)
+          .get(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.OK)
+          .expect(({ body }) => {
+            expect(Array.isArray(body)).toBe(true);
+            expect(body.length).toBeGreaterThanOrEqual(1);
+            expect(body[0]).toHaveProperty('userId');
+            expect(body[0]).toHaveProperty('role');
+          });
+      });
+
+      it('should return OK (200) with filtered contributors by role', async () => {
+        const managerData = getRegisterDto();
+        await getAccessToken(httpServer, managerData);
+        const managerUserId = (await dbService.user.findFirst({
+          where: {
+            profile: {
+              username: managerData.username,
+            },
+          },
+        }))!.id;
+
+        await dbService.projectContributor.createMany({
+          data: [
+            {
+              projectId: project.id,
+              userId: contributorUserId,
+              role: 'DEVELOPER',
+            },
+            {
+              projectId: project.id,
+              userId: managerUserId,
+              role: 'MANAGER',
+            },
+          ],
+        });
+
+        await request(httpServer)
+          .get(`/projects/${project.id}/contributors?role=MANAGER`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.OK)
+          .expect(({ body }) => {
+            expect(body).toEqual(
+              expect.arrayContaining([
+                getProjectContributorExpectedStructure(),
+              ]),
+            );
+            expect(body.length).toBe(1);
+            expect(body[0].role).toBe('MANAGER');
+          });
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .get(`/projects/${project.id}/contributors`)
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+    });
+
+    describe('PATCH /projects/:id/contributors', () => {
+      let updateContributorDto: any;
+
+      beforeEach(async () => {
+        await dbService.projectContributor.create({
+          data: {
+            projectId: project.id,
+            userId: contributorUserId,
+            role: 'DEVELOPER',
+          },
+        });
+
+        updateContributorDto = {
+          username: contributorData.username,
+          role: 'MANAGER',
+        };
+      });
+
+      it('should return OK (200) and update contributor role', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(updateContributorDto)
+          .expect(HttpStatus.OK)
+          .expect(({ body }) =>
+            expect(body).toEqual(getProjectContributorExpectedStructure()),
+          );
+
+        const contributor = await dbService.projectContributor.findUnique({
+          where: {
+            projectId_userId: {
+              projectId: project.id,
+              userId: contributorUserId,
+            },
+          },
+        });
+        expect(contributor?.role).toBe(updateContributorDto.role);
+      });
+
+      it('should return FORBIDDEN (403) when non-owner tries to update role', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${contributorAccessToken}`)
+          .send(updateContributorDto)
+          .expect(HttpStatus.FORBIDDEN);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent contributor', async () => {
+        const dto = {
+          username: 'nonexistent',
+          role: 'MANAGER',
+        };
+
+        await request(httpServer)
+          .patch(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/contributors`)
+          .send(updateContributorDto)
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+
+      it('should return BAD_REQUEST (400) for invalid update data', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/contributors`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({})
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent project', async () => {
+        await request(httpServer)
+          .patch('/projects/invalid-id/contributors')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(updateContributorDto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+    });
+
+    describe('DELETE /projects/:id/contributors', () => {
+      beforeEach(async () => {
+        await dbService.projectContributor.create({
+          data: {
+            projectId: project.id,
+            userId: contributorUserId,
+            role: 'DEVELOPER',
+          },
+        });
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .delete(
+            `/projects/${project.id}/contributors/${contributorData.username}`,
+          )
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+
+      it('should return OK (200) and remove contributor', async () => {
+        await request(httpServer)
+          .delete(
+            `/projects/${project.id}/contributors/${contributorData.username}`,
+          )
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.OK)
+          .expect(({ body }) => {
+            expect(body).toEqual({ message: 'Delete successful' });
+          });
+
+        const contributor = await dbService.projectContributor.findUnique({
+          where: {
+            projectId_userId: {
+              projectId: project.id,
+              userId: contributorUserId,
+            },
+          },
+        });
+        expect(contributor).toBeNull();
+      });
+
+      it('should return FORBIDDEN (403) when non-owner tries to remove contributor', async () => {
+        await request(httpServer)
+          .delete(
+            `/projects/${project.id}/contributors/${contributorData.username}`,
+          )
+          .set('Authorization', `Bearer ${contributorAccessToken}`)
+          .expect(HttpStatus.FORBIDDEN);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent contributor', async () => {
+        await request(httpServer)
+          .delete(`/projects/${project.id}/contributors/invalidId`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.NOT_FOUND);
       });

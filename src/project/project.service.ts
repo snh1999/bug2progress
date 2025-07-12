@@ -3,13 +3,7 @@ import { ProjectRole } from '@prisma/client';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
-import {
-  CreateProjectDto,
-  UpdateProjectDto,
-  CreateContributorDto,
-  UpdateContributorDto,
-  DeleteContributorDto,
-} from './dto';
+import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
 
 @Injectable()
 export class ProjectService {
@@ -47,7 +41,7 @@ export class ProjectService {
     if (userid)
       return await this.prisma.project.findMany({
         where: {
-          ownerId: userid,
+          OR: [{ ownerId: userid }, { members: { some: { userId: userid } } }],
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -92,18 +86,18 @@ export class ProjectService {
     };
   }
 
-  async findContributor(url: string, role?: ProjectRole) {
-    const project = await this.findOne(url);
+  async findContributor(project: string, role?: ProjectRole) {
+    const existingProject = await this.findOne(project);
 
     return this.prisma.projectContributor.findMany({
       where: {
-        projectId: project.id,
+        projectId: existingProject.id,
         role,
       },
     });
   }
 
-  async addContributor(id: string, dto: CreateContributorDto, userId: string) {
+  async addContributor(id: string, dto: ContributorDto, userId: string) {
     const project = await this.checkPermission(id, userId);
     const contributorId = await this.userService.getIdFromUsername(
       dto.username,
@@ -118,11 +112,7 @@ export class ProjectService {
     });
   }
 
-  async updateContributorRole(
-    id: string,
-    dto: UpdateContributorDto,
-    userId: string,
-  ) {
+  async updateContributorRole(id: string, dto: ContributorDto, userId: string) {
     const project = await this.checkPermission(id, userId);
     const contributorId = await this.userService.getIdFromUsername(
       dto.username,
@@ -135,19 +125,13 @@ export class ProjectService {
           userId: contributorId,
         },
       },
-      data: { ...dto },
+      data: { role: dto.role },
     });
   }
 
-  async removeContributor(
-    id: string,
-    dto: DeleteContributorDto,
-    userId: string,
-  ) {
+  async removeContributor(id: string, username: string, userId: string) {
     const project = await this.checkPermission(id, userId);
-    const contributorId = await this.userService.getIdFromUsername(
-      dto.username,
-    );
+    const contributorId = await this.userService.getIdFromUsername(username);
 
     await this.prisma.projectContributor.delete({
       where: {

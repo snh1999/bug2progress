@@ -9,9 +9,8 @@ import {
 } from 'class-validator';
 import { ProjectStatus } from '@prisma/client';
 export class CreateProjectDto {
-  @IsAlphanumeric()
-  @IsNotEmpty()
   @IsOptional()
+  @IsString()
   urlid?: string;
 
   @IsString()

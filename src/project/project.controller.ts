@@ -7,15 +7,10 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import {
-  CreateProjectDto,
-  UpdateProjectDto,
-  CreateContributorDto,
-  UpdateContributorDto,
-  DeleteContributorDto,
-} from './dto';
+import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
 import { ProjectRole } from '@prisma/client';
 import { ProjectFeatureService } from './projectxfeature.service';
 import { ProjectFeatureDto } from './dto';
@@ -62,18 +57,14 @@ export class ProjectController {
   }
 
   @Get(':id/contributors')
-  findContributor(
-    @Param('id') id: string,
-    @Body() dto?: { role: ProjectRole },
-  ) {
-    if (dto) return this.projectService.findContributor(id, dto.role);
-    return this.projectService.findContributor(id);
+  findContributor(@Param('id') id: string, @Query('role') role?: ProjectRole) {
+    return this.projectService.findContributor(id, role);
   }
 
   @Post(':id/contributors')
-  createContributor(
+  addContributor(
     @Param('id') id: string,
-    @Body() dto: CreateContributorDto,
+    @Body() dto: ContributorDto,
     @GetUser('id') userid: string,
   ) {
     return this.projectService.addContributor(id, dto, userid);
@@ -82,19 +73,19 @@ export class ProjectController {
   @Patch(':id/contributors')
   updateContributor(
     @Param('id') id: string,
-    @Body() dto: UpdateContributorDto,
+    @Body() dto: ContributorDto,
     @GetUser('id') userid: string,
   ) {
     return this.projectService.updateContributorRole(id, dto, userid);
   }
 
-  @Delete(':id/contributors')
+  @Delete(':id/contributors/:contributorId')
   removeContributor(
     @Param('id') id: string,
-    @Body() dto: DeleteContributorDto,
+    @Param('contributorId') contributorId: string,
     @GetUser('id') userid: string,
   ) {
-    return this.projectService.removeContributor(id, dto, userid);
+    return this.projectService.removeContributor(id, contributorId, userid);
   }
 
   @Get(':id/features')

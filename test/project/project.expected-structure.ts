@@ -12,3 +12,10 @@ export const getProjectExpectedStructure = () =>
     basePostId: expect.any(String),
     ownerId: expect.any(String),
   });
+
+export const getProjectContributorExpectedStructure = () =>
+  expect.objectContaining({
+    projectId: expect.any(String),
+    userId: expect.any(String),
+    role: expect.any(String),
+  });

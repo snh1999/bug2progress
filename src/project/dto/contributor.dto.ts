@@ -1,17 +1,7 @@
 import { ProjectRole } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateContributorDto {
-  @IsString()
-  @IsNotEmpty()
-  username!: string;
-
-  @IsEnum(ProjectRole)
-  @IsOptional()
-  role?: ProjectRole;
-}
-
-export class UpdateContributorDto {
+export class ContributorDto {
   @IsString()
   @IsNotEmpty()
   username!: string;
@@ -19,10 +9,4 @@ export class UpdateContributorDto {
   @IsEnum(ProjectRole)
   @IsNotEmpty()
   role!: ProjectRole;
-}
-
-export class DeleteContributorDto {
-  @IsString()
-  @IsNotEmpty()
-  username!: string;
 }

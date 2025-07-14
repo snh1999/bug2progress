@@ -63,9 +63,15 @@ export class ProjectService {
     // }
     await this.checkPermission(id, userId);
 
+    const { postContent, ...projectData } = dto;
+
+    if (postContent !== undefined) {
+      await this.postService.update(id, { postContent }, userId);
+    }
+
     return this.prisma.project.update({
       where: { id, ownerId: userId },
-      data: { ...dto },
+      data: { ...projectData },
     });
   }
 

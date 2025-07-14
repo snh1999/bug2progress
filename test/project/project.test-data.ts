@@ -20,4 +20,4 @@ export const createTestProject = async (
       .post('/projects')
       .set('Authorization', `Bearer ${accessToken}`)
       .send(createProjectDto ?? getCreateProjectMockDto())
-  ).body;
+  ).body.data;

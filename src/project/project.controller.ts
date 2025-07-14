@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
@@ -17,9 +18,11 @@ import { ProjectFeatureDto } from './dto';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/common/guard';
 import { GetUser } from '@/common/decorator';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
 
 @ApiTags('Project')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(ResponseTransformInterceptor)
 @Controller('projects')
 export class ProjectController {
   constructor(

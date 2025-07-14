@@ -14,6 +14,7 @@ import {
 } from './project.expected-structure';
 import { CreateProjectDto, UpdateProjectDto } from '@/project/dto';
 import { getRegisterDto } from '../auth/auth.test-data';
+import { createTestUser } from '../users/users.test-helpers';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -47,17 +48,17 @@ describe('App e2e', () => {
         createProjectDto = getCreateProjectMockDto();
       });
       it('should successfully create a project and return CREATED (201) when request with valid data and auth', async () => {
-        const response = await request(httpServer)
+        const {
+          body: { data },
+        } = await request(httpServer)
           .post('/projects')
           .set('Authorization', `Bearer ${accessToken}`)
           .send(createProjectDto)
-          .expect(HttpStatus.CREATED)
-          .expect(({ body }) =>
-            expect(body).toEqual(getProjectExpectedStructure()),
-          );
+          .expect(HttpStatus.CREATED);
 
+        expect(data).toEqual(getProjectExpectedStructure());
         const dbProject = await dbService.project.findUnique({
-          where: { id: response.body.id },
+          where: { id: data.id },
         });
         expect(dbProject).toBeDefined();
 
@@ -108,27 +109,31 @@ describe('App e2e', () => {
       });
 
       it('should return OK (200) with projects when valid auth token is provided', async () => {
-        const response = await request(httpServer)
+        const {
+          body: { data },
+        } = await request(httpServer)
           .get('/projects')
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
 
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.length).toBeGreaterThanOrEqual(2);
-        expect(response.body[0]).toEqual(getProjectExpectedStructure());
+        expect(Array.isArray(data)).toBe(true);
+        expect(data.length).toBeGreaterThanOrEqual(2);
+        expect(data[0]).toEqual(getProjectExpectedStructure());
       });
 
       it('should return OK (200) with projects of current user', async () => {
         const allProjects = await dbService.project.findMany();
         const ownerId = allProjects[0].ownerId;
 
-        const response = await request(httpServer)
+        const {
+          body: { data },
+        } = await request(httpServer)
           .get(`/projects`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
 
-        expect(Array.isArray(response.body)).toBe(true);
-        response.body.forEach((project: any) => {
+        expect(Array.isArray(data)).toBe(true);
+        data.forEach((project: any) => {
           expect(project.ownerId).toBe(ownerId);
         });
       });
@@ -153,9 +158,9 @@ describe('App e2e', () => {
           .get(`/projects/${project.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual(getProjectExpectedStructure());
-            expect(body.id).toBe(project.id);
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(getProjectExpectedStructure());
+            expect(data.id).toBe(project.id);
           });
       });
 
@@ -172,9 +177,9 @@ describe('App e2e', () => {
           .get(`/projects/${project.urlid}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual(getProjectExpectedStructure());
-            expect(body.urlid).toBe(project.urlid);
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(getProjectExpectedStructure());
+            expect(data.urlid).toBe(project.urlid);
           });
       });
 
@@ -220,11 +225,11 @@ describe('App e2e', () => {
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateProjectDto)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual(getProjectExpectedStructure());
-            expect(body.title).toBe(updateProjectDto.title);
-            expect(body.summary).toBe(updateProjectDto.summary);
-            expect(body.isPublic).toBe(updateProjectDto.isPublic);
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(getProjectExpectedStructure());
+            expect(data.title).toBe(updateProjectDto.title);
+            expect(data.summary).toBe(updateProjectDto.summary);
+            expect(data.isPublic).toBe(updateProjectDto.isPublic);
           });
 
         expect(
@@ -234,6 +239,20 @@ describe('App e2e', () => {
             })
           )?.title,
         ).toBe(updateProjectDto.title);
+      });
+
+      it('should return OK (200) and successfully update owner', async () => {
+        const newUser = await createTestUser(dbService);
+
+        await request(httpServer)
+          .patch(`/projects/${existingProject.id}`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({ ownerId: newUser.id })
+          .expect(HttpStatus.OK)
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(getProjectExpectedStructure());
+            expect(data.ownerId).toBe(newUser.id);
+          });
       });
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
@@ -283,8 +302,8 @@ describe('App e2e', () => {
           .delete(`/projects/${existingProject.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual({ message: 'delete successful' });
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual({ message: 'delete successful' });
           });
 
         const project = await dbService.project.findUnique({
@@ -360,8 +379,8 @@ describe('App e2e', () => {
           .set('Authorization', `Bearer ${accessToken}`)
           .send(dto)
           .expect(HttpStatus.CREATED)
-          .expect(({ body }) =>
-            expect(body).toEqual(getProjectContributorExpectedStructure()),
+          .expect(({ body: { data } }) =>
+            expect(data).toEqual(getProjectContributorExpectedStructure()),
           );
 
         const contributor = await dbService.projectContributor.findUnique({
@@ -378,12 +397,12 @@ describe('App e2e', () => {
           .get('/projects')
           .set('Authorization', `Bearer ${contributorAccessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body.length).toBeGreaterThanOrEqual(1);
-            expect(body).toEqual(
+          .expect(({ body: { data } }) => {
+            expect(data.length).toBeGreaterThanOrEqual(1);
+            expect(data).toEqual(
               expect.arrayContaining([getProjectExpectedStructure()]),
             );
-            expect(body[0].id).toBe(project.id);
+            expect(data[0].id).toBe(project.id);
           });
       });
 
@@ -470,11 +489,11 @@ describe('App e2e', () => {
           .get(`/projects/${project.id}/contributors`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(Array.isArray(body)).toBe(true);
-            expect(body.length).toBeGreaterThanOrEqual(1);
-            expect(body[0]).toHaveProperty('userId');
-            expect(body[0]).toHaveProperty('role');
+          .expect(({ body: { data } }) => {
+            expect(Array.isArray(data)).toBe(true);
+            expect(data.length).toBeGreaterThanOrEqual(1);
+            expect(data[0]).toHaveProperty('userId');
+            expect(data[0]).toHaveProperty('role');
           });
       });
 
@@ -508,14 +527,14 @@ describe('App e2e', () => {
           .get(`/projects/${project.id}/contributors?role=MANAGER`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual(
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(
               expect.arrayContaining([
                 getProjectContributorExpectedStructure(),
               ]),
             );
-            expect(body.length).toBe(1);
-            expect(body[0].role).toBe('MANAGER');
+            expect(data.length).toBe(1);
+            expect(data[0].role).toBe('MANAGER');
           });
       });
 
@@ -550,8 +569,8 @@ describe('App e2e', () => {
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateContributorDto)
           .expect(HttpStatus.OK)
-          .expect(({ body }) =>
-            expect(body).toEqual(getProjectContributorExpectedStructure()),
+          .expect(({ body: { data } }) =>
+            expect(data).toEqual(getProjectContributorExpectedStructure()),
           );
 
         const contributor = await dbService.projectContributor.findUnique({
@@ -636,8 +655,8 @@ describe('App e2e', () => {
           )
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
-          .expect(({ body }) => {
-            expect(body).toEqual({ message: 'Delete successful' });
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual({ message: 'Delete successful' });
           });
 
         const contributor = await dbService.projectContributor.findUnique({

@@ -134,6 +134,7 @@ enum MemberType {
 model Project {
   id        String   @id @default(uuid())
   urlid     String?  @unique
+  inviteCode String @default(uuid()) @unique
   title     String
   summary   String
   createdAt DateTime @default(now())

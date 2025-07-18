@@ -475,6 +475,53 @@ describe('App e2e', () => {
       });
     });
 
+    describe('POST /projects/:id/join', () => {
+      it('should return CREATED (201) and add a contributor', async () => {
+        const anotherAccessToken = await getAccessToken(httpServer);
+        await request(httpServer)
+          .post(`/projects/${project.inviteCode}/join`)
+          .set('Authorization', `Bearer ${anotherAccessToken}`)
+          .expect(HttpStatus.CREATED)
+          .expect(({ body: { data } }) => {
+            expect(data).toEqual(getProjectContributorExpectedStructure());
+            console.log(data);
+          });
+
+        const contributor = await dbService.projectContributor.findMany({
+          where: {
+            projectId: project.id,
+          },
+        });
+        expect(contributor).toBeDefined();
+        expect(contributor.length).toBeGreaterThanOrEqual(1);
+
+        await request(httpServer)
+          .get('/projects')
+          .set('Authorization', `Bearer ${anotherAccessToken}`)
+          .expect(HttpStatus.OK)
+          .expect(({ body: { data } }) => {
+            expect(data.length).toBeGreaterThanOrEqual(1);
+            expect(data).toEqual(
+              expect.arrayContaining([getProjectExpectedStructure()]),
+            );
+            expect(data[0].id).toBe(project.id);
+          });
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .post(`/projects/${project.inviteCode}/join`)
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent project', async () => {
+        await request(httpServer)
+          .post(`/projects/nonexistent/join`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+    });
+
     describe('GET /projects/:id/contributors', () => {
       it('should return OK (200) with list of contributors', async () => {
         await dbService.projectContributor.create({

@@ -28,6 +28,7 @@ import {
   PROFILE_NOT_FOUND_MESSAGE,
   WRONG_PASSWORD_MESSAGE,
 } from './auth.constants';
+import { hashTokenString } from '@/utils/hashedString';
 @Injectable()
 export class AuthService {
   constructor(
@@ -125,7 +126,7 @@ export class AuthService {
 
   private async generatePasswordResetToken(email: string) {
     const plainTextToken = crypto.randomBytes(32).toString('hex');
-    const passwordResetToken = this.hashTokenString(plainTextToken);
+    const passwordResetToken = hashTokenString(plainTextToken);
 
     await this.updatePasswordResetFields(
       email,
@@ -137,7 +138,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, password: string) {
-    const hashedToken = this.hashTokenString(token);
+    const hashedToken = hashTokenString(token);
     const user = await this.prisma.user.findFirst({
       where: { passwordResetToken: hashedToken },
       include: { profile: { select: { name: true, username: true } } },
@@ -214,10 +215,6 @@ export class AuthService {
         },
       },
     });
-  }
-
-  private hashTokenString(token: string) {
-    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   private async updatePasswordResetFields(

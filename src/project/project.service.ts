@@ -1,9 +1,14 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { ProjectRole } from '@prisma/client';
 import { PostService } from '../post/post.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
+import { generateRandomString } from '@/utils/hashedString';
 
 @Injectable()
 export class ProjectService {
@@ -31,6 +36,7 @@ export class ProjectService {
         data: {
           ...projectData,
           ownerId: userId,
+          inviteCode: await generateRandomString(),
           basePostId: post.id,
         },
       });
@@ -63,15 +69,19 @@ export class ProjectService {
     // }
     await this.checkPermission(id, userId);
 
-    const { postContent, ...projectData } = dto;
+    const { postContent, updateInviteCode, ...projectData } = dto;
 
-    if (postContent !== undefined) {
-      await this.postService.update(id, { postContent }, userId);
-    }
+    if (updateInviteCode)
+      if (postContent !== undefined) {
+        await this.postService.update(id, { postContent }, userId);
+      }
 
     return this.prisma.project.update({
       where: { id, ownerId: userId },
-      data: { ...projectData },
+      data: {
+        ...projectData,
+        inviteCode: updateInviteCode ? await generateRandomString() : undefined,
+      },
     });
   }
 
@@ -90,6 +100,31 @@ export class ProjectService {
     return {
       message: 'delete successful',
     };
+  }
+
+  async joinWithInvite(inviteCode: string, userId: string) {
+    const project = await this.prisma.project.findUniqueOrThrow({
+      where: { inviteCode },
+    });
+
+    const contributor = await this.prisma.projectContributor.findFirst({
+      where: {
+        projectId: project.id,
+        userId,
+      },
+    });
+
+    if (contributor) {
+      throw new BadRequestException('You have already joined this project');
+    }
+
+    return this.prisma.projectContributor.create({
+      data: {
+        userId,
+        projectId: project.id,
+        role: ProjectRole.DEVELOPER,
+      },
+    });
   }
 
   async findContributor(project: string, role?: ProjectRole) {

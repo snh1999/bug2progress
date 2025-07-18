@@ -73,6 +73,14 @@ export class ProjectController {
     return this.projectService.addContributor(id, dto, userid);
   }
 
+  @Post(':inviteCode/join')
+  getInviteCode(
+    @Param('inviteCode') inviteCode: string,
+    @GetUser('id') userid: string,
+  ) {
+    return this.projectService.joinWithInvite(inviteCode, userid);
+  }
+
   @Patch(':id/contributors')
   updateContributor(
     @Param('id') id: string,

@@ -144,7 +144,7 @@ export class OrganizationService {
     else if (dto.role == 'MODERATOR')
       await this.isUserAuthorized(orgUrl, userid, ORG.MODERATOR_PERMISSION);
 
-    const idToAdd = await this.userService.getIdFromUsername(dto.userName);
+    const idToAdd = await this.userService.getIdFromUser(dto.userName);
     if (!idToAdd) return new NotFoundException('Invalid username');
     const orgId = await this.getOrgId(orgUrl);
 
@@ -203,7 +203,7 @@ export class OrganizationService {
   async removeMemberBy(orgUrl: string, userToRemove: string, userid: string) {
     await this.isUserAuthorized(orgUrl, userid, ORG.REMOVE_MEMBER_PERMISSION);
 
-    const idToRemove = await this.userService.getIdFromUsername(userToRemove);
+    const idToRemove = await this.userService.getIdFromUser(userToRemove);
     return this.removeMember(orgUrl, idToRemove);
   }
 

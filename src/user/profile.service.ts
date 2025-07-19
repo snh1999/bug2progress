@@ -19,7 +19,7 @@ export class ProfileService {
   }
 
   async viewProfile(username: string) {
-    const userid = await this.userService.getIdFromUsername(username);
+    const userid = await this.userService.getIdFromUser(username);
     return await this.returnProfile(userid, false);
   }
 

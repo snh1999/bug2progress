@@ -60,8 +60,12 @@ export class ProjectController {
   }
 
   @Get(':id/contributors')
-  findContributor(@Param('id') id: string, @Query('role') role?: ProjectRole) {
-    return this.projectService.findContributor(id, role);
+  findContributor(
+    @Param('id') id: string,
+    @Query('role') role?: ProjectRole,
+    @Query('userId') userId?: string,
+  ) {
+    return this.projectService.findContributor(id, role, userId);
   }
 
   @Post(':id/contributors')

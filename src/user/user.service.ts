@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 // import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
@@ -44,7 +40,7 @@ export class UserService {
 
   // ########################## delete user(ADMIN) ##############################
   async deleteUser(username: string) {
-    const id = await this.getIdFromUsername(username);
+    const id = await this.getIdFromUser(username);
     await this.prisma.user.delete({
       where: {
         id,
@@ -52,16 +48,15 @@ export class UserService {
     });
   }
 
-  async getIdFromUsername(username: string) {
-    const profile = await this.prisma.profile.findUnique({
+  async getIdFromUser(username: string) {
+    const profile = await this.prisma.profile.findFirstOrThrow({
       where: {
-        username,
+        OR: [{ username }, { userId: username }],
       },
       select: {
         userId: true,
       },
     });
-    if (!profile) throw new NotFoundException('Wrong Username');
     return profile.userId;
   }
 

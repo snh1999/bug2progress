@@ -126,7 +126,7 @@ export class TicketService {
     if (dto instanceof UpdateStatusDto)
       return this.updateStatus(ticketid, dto, userId);
     else if (dto instanceof TicketAssignDto) {
-      const idToAssign = await this.userService.getIdFromUsername(dto.username);
+      const idToAssign = await this.userService.getIdFromUser(dto.username);
       return this.assignTicket(ticketid, idToAssign, userId);
     } else if (dto instanceof TicketEnumDto) {
       return this.verifyTicket(ticketid, dto, userId);

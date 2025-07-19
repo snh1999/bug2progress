@@ -378,7 +378,7 @@ describe('App e2e', () => {
     describe('POST /projects/:id/contributors', () => {
       it('should return CREATED (201) and add a contributor', async () => {
         const dto = {
-          username: contributorData.username,
+          userId: contributorUserId,
           role: 'DEVELOPER',
         };
 
@@ -435,7 +435,7 @@ describe('App e2e', () => {
 
       it('should return NOT_FOUND (404) for non-existent user', async () => {
         const dto = {
-          username: 'nonexistent',
+          userId: 'nonexistent',
           role: 'DEVELOPER',
         };
 
@@ -456,7 +456,7 @@ describe('App e2e', () => {
 
       it('should return NOT_FOUND (404) for non-existent project', async () => {
         const dto = {
-          username: contributorData.username,
+          userId: contributorData.username,
           role: 'DEVELOPER',
         };
 
@@ -471,7 +471,7 @@ describe('App e2e', () => {
         const anotherUserToken = await getAccessToken(httpServer);
 
         const dto = {
-          username: contributorData.username,
+          userId: contributorData.username,
           role: 'DEVELOPER',
         };
 
@@ -612,7 +612,7 @@ describe('App e2e', () => {
         });
 
         updateContributorDto = {
-          username: contributorData.username,
+          userId: contributorData.username,
           role: 'MANAGER',
         };
       });
@@ -648,7 +648,7 @@ describe('App e2e', () => {
 
       it('should return NOT_FOUND (404) for non-existent contributor', async () => {
         const dto = {
-          username: 'nonexistent',
+          userId: 'nonexistent',
           role: 'MANAGER',
         };
 

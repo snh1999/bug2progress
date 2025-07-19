@@ -4,7 +4,7 @@ import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 export class ContributorDto {
   @IsString()
   @IsNotEmpty()
-  username!: string;
+  userId!: string;
 
   @IsEnum(ProjectRole)
   @IsNotEmpty()

@@ -138,22 +138,24 @@ export class ProjectService {
     });
   }
 
-  async findContributor(project: string, role?: ProjectRole) {
+  async findContributor(project: string, role?: ProjectRole, userId?: string) {
     const existingProject = await this.find(project);
 
     return this.prisma.projectContributor.findMany({
       where: {
         projectId: existingProject.id,
         role,
+        userId,
+      },
+      include: {
+        user: { include: { profile: true } },
       },
     });
   }
 
   async addContributor(id: string, dto: ContributorDto, userId: string) {
     const project = await this.checkPermission(id, userId);
-    const contributorId = await this.userService.getIdFromUsername(
-      dto.username,
-    );
+    const contributorId = await this.userService.getIdFromUser(dto.userId);
 
     return this.prisma.projectContributor.create({
       data: {
@@ -166,9 +168,7 @@ export class ProjectService {
 
   async updateContributorRole(id: string, dto: ContributorDto, userId: string) {
     const project = await this.checkPermission(id, userId);
-    const contributorId = await this.userService.getIdFromUsername(
-      dto.username,
-    );
+    const contributorId = await this.userService.getIdFromUser(dto.userId);
 
     return this.prisma.projectContributor.update({
       where: {
@@ -181,9 +181,9 @@ export class ProjectService {
     });
   }
 
-  async removeContributor(id: string, username: string, userId: string) {
+  async removeContributor(id: string, contributor: string, userId: string) {
     const project = await this.checkPermission(id, userId);
-    const contributorId = await this.userService.getIdFromUsername(username);
+    const contributorId = await this.userService.getIdFromUser(contributor);
 
     await this.prisma.projectContributor.delete({
       where: {

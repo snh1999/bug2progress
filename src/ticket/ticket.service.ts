@@ -26,7 +26,7 @@ export class TicketService {
   async create(dto: CreateTicketDto, userid: string) {
     // create ticket
     if (dto.projectId) {
-      const project = await this.projectService.findOne(dto.projectId);
+      const project = await this.projectService.find(dto.projectId);
       dto.projectId = project.id;
     }
     // check feature x project
@@ -110,7 +110,7 @@ export class TicketService {
   ) {
     // check user role (if authorized)
     // if owner
-    const project = await this.projectService.findOne(projectId);
+    const project = await this.projectService.find(projectId);
     const userRole = await this.prisma.projectContributor.findFirst({
       where: {
         AND: [{ projectId: project.id }, { userId }],

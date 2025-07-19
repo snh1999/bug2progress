@@ -11,7 +11,7 @@ export class ProjectFeatureService {
   ) {}
 
   async findFeatures(id: string) {
-    const project = await this.projectService.findOne(id);
+    const project = await this.projectService.find(id);
     return this.prisma.projectXFeatures.findMany({
       where: {
         projectId: project.id,
@@ -25,7 +25,7 @@ export class ProjectFeatureService {
     userid: string,
     dto?: ProjectFeatureDto,
   ) {
-    const project = await this.projectService.findOne(id);
+    const project = await this.projectService.find(id);
     if (project.ownerId != userid)
       throw new UnauthorizedException(
         'Only Project owner can perform this action',
@@ -40,7 +40,7 @@ export class ProjectFeatureService {
     });
   }
   async removeFeature(id: string, featureId: string, userid: string) {
-    const project = await this.projectService.findOne(id);
+    const project = await this.projectService.find(id);
     if (project.ownerId != userid)
       throw new UnauthorizedException(
         'Only Project owner can perform this action',

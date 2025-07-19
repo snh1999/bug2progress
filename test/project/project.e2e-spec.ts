@@ -183,6 +183,14 @@ describe('App e2e', () => {
           });
       });
 
+      it('should return NOT_FOUND (404) and a project by ID when non member tries to access', async () => {
+        const anotherAccessToken = await getAccessToken(httpServer);
+        await request(httpServer)
+          .get(`/projects/${project.id}`)
+          .set('Authorization', `Bearer ${anotherAccessToken}`)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
       it('should return NOT_FOUND (404) when project does not exist(invalid id)', async () => {
         const nonExistentId = '00000000-0000-0000-0000';
         await request(httpServer)
@@ -484,7 +492,6 @@ describe('App e2e', () => {
           .expect(HttpStatus.CREATED)
           .expect(({ body: { data } }) => {
             expect(data).toEqual(getProjectContributorExpectedStructure());
-            console.log(data);
           });
 
         const contributor = await dbService.projectContributor.findMany({

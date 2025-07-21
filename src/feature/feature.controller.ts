@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { FeatureService } from './feature.service';
 import { CreateFeatureDto } from './dto/feature-create.dto';
@@ -17,7 +18,7 @@ import { GetUser } from '@/common/decorator';
 
 @ApiTags('Features')
 @UseGuards(JwtAuthGuard)
-@Controller('feature')
+@Controller('features')
 export class FeatureController {
   constructor(private readonly featureService: FeatureService) {}
 
@@ -27,8 +28,8 @@ export class FeatureController {
   }
 
   @Get()
-  findAll() {
-    return this.featureService.findAll();
+  findAll(@Query('projectId') projectId: string) {
+    return this.featureService.findAll(projectId);
   }
 
   @Get(':id')

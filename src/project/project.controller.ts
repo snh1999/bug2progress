@@ -13,8 +13,6 @@ import {
 import { ProjectService } from './project.service';
 import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
 import { ProjectRole } from '@prisma/client';
-import { ProjectFeatureService } from './projectxfeature.service';
-import { ProjectFeatureDto } from './dto';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/common/guard';
 import { GetUser } from '@/common/decorator';
@@ -25,10 +23,7 @@ import { ResponseTransformInterceptor } from '@/common/interceptor/response-tran
 @UseInterceptors(ResponseTransformInterceptor)
 @Controller('projects')
 export class ProjectController {
-  constructor(
-    private readonly projectService: ProjectService,
-    private readonly projectFeatures: ProjectFeatureService,
-  ) {}
+  constructor(private readonly projectService: ProjectService) {}
 
   @Post()
   create(@Body() dto: CreateProjectDto, @GetUser('id') userid: string) {
@@ -101,29 +96,5 @@ export class ProjectController {
     @GetUser('id') userid: string,
   ) {
     return this.projectService.removeContributor(id, contributorId, userid);
-  }
-
-  @Get(':id/features')
-  findFeatures(@Param('id') id: string) {
-    return this.projectFeatures.findFeatures(id);
-  }
-
-  @Post(':id/features/:featureId')
-  addFeature(
-    @Param('id') id: string,
-    @Param('featureId') featureId: string,
-    @GetUser('id') userid: string,
-    @Body() dto?: ProjectFeatureDto,
-  ) {
-    return this.projectFeatures.addFeature(id, featureId, userid, dto);
-  }
-
-  @Delete(':id/features/:featureId')
-  removeFeature(
-    @Param('id') id: string,
-    @Param('featureId') featureId: string,
-    @GetUser('id') userid: string,
-  ) {
-    return this.projectFeatures.removeFeature(id, featureId, userid);
   }
 }

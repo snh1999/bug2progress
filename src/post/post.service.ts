@@ -61,7 +61,7 @@ export class PostService {
       where: {
         OR: [{ id }, { slug: id }],
         project: null,
-        features: null,
+        // features: null,
       },
       include: {
         author: {
@@ -105,7 +105,7 @@ export class PostService {
         id: post.id,
         authorId: userId,
         project: null,
-        features: null,
+        // features: null,
       },
     });
 

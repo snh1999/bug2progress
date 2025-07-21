@@ -10,27 +10,17 @@ export class FeatureService {
     return this.prisma.features.create({
       data: {
         ...dto,
-        basePost: {
-          create: {
-            title: dto.title,
-            postContent: `This post is automatically genereted for feature ${dto.title}.`,
-            authorId: userId,
-          },
-        },
+        ownerId: userId,
       },
     });
   }
 
-  async findAll(userid?: string) {
-    if (userid)
-      return await this.prisma.features.findMany({
-        where: {
-          basePost: {
-            authorId: userid,
-          },
-        },
-      });
-    return this.prisma.features.findMany({});
+  async findAll(projectId?: string) {
+    return await this.prisma.features.findMany({
+      where: {
+        projectId,
+      },
+    });
   }
 
   async findOne(id: string) {
@@ -43,17 +33,11 @@ export class FeatureService {
     return feature;
   }
 
-  async update(id: string, dto: UpdateFeatureDto, userid: string) {
-    return this.prisma.features.updateMany({
+  async update(id: string, dto: UpdateFeatureDto, userId: string) {
+    return this.prisma.features.update({
       where: {
-        AND: [
-          { id },
-          {
-            basePost: {
-              authorId: userid,
-            },
-          },
-        ],
+        id,
+        ownerId: userId,
       },
       data: {
         ...dto,
@@ -61,11 +45,11 @@ export class FeatureService {
     });
   }
 
-  async remove(id: string, userid: string) {
-    const feature = await this.findOne(id);
-    await this.prisma.post.deleteMany({
+  async remove(id: string, userId: string) {
+    await this.prisma.features.delete({
       where: {
-        AND: [{ id: feature.postId }, { authorId: userid }],
+        id,
+        ownerId: userId,
       },
     });
     return {

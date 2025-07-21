@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-// TODO- figure out the way to add links
-// TODO- Maybe process = a file
+import { FeatureType } from '@prisma/client';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+
 export class CreateFeatureDto {
   @ApiProperty({
     description: 'REQUIRED- title for the post',
@@ -33,5 +39,13 @@ export class CreateFeatureDto {
   })
   @IsBoolean()
   @IsOptional()
-  ispublic?: boolean;
+  isPublic?: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  projectId!: string;
+
+  @IsEnum(FeatureType)
+  @IsOptional()
+  featureType?: FeatureType;
 }

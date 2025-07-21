@@ -10,28 +10,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ################################# USER #############################
 model User {
-  id                  String             @id @default(uuid())
-  joinedAt            DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  email               String             @unique
-  role                Role               @default(USER)
-  isActive            Boolean            @default(true)
+  id                  String          @id @default(uuid())
+  joinedAt            DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  email               String          @unique
+  role                Role            @default(USER)
+  isActive            Boolean         @default(true)
   password            String
-  passwordChangedAt   DateTime           @default(now())
-  passwordResetToken  String?            @unique
+  passwordChangedAt   DateTime        @default(now())
+  passwordResetToken  String?         @unique
   passwordTokenExpiry DateTime?
   profile             Profile?
   posts               Post[]
   postComment         PostComment[]
   ticketComment       TicketComment[]
   ticketCreator       Ticket[]
-  ticketVarifier      TicketRoles[]      @relation("varifier")
-  ticketCloser        TicketRoles[]      @relation("closer")
-  ticketAssigner      TicketRoles[]      @relation("assign")
-  developerTicket     TicketRoles[]      @relation("developer")
-  projectXFeatures    ProjectXFeatures[]
+  ticketVarifier      TicketRoles[]   @relation("varifier")
+  ticketCloser        TicketRoles[]   @relation("closer")
+  ticketAssigner      TicketRoles[]   @relation("assign")
+  developerTicket     TicketRoles[]   @relation("developer")
+  projectXFeatures    Features[]
 
   orgOwned  Organization[]
   orgJoined OrgMembers[]
@@ -45,7 +44,6 @@ enum Role {
   ADMIN
 }
 
-// dependant on exactly one USER- PK userid is same as USER
 model Profile {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   String    @id
@@ -56,8 +54,6 @@ model Profile {
   birthday DateTime?
   photo    String?
 }
-
-// model preferences
 
 model Post {
   id              String   @id @default(uuid())
@@ -80,8 +76,8 @@ model Post {
   refProject   Project? @relation("ref-project", fields: [refProjectId], references: [id])
   refProjectId String?
 
-  refFeature    ProjectXFeatures? @relation(fields: [refProjectId, refFeaturesId], references: [projectId, featuresId])
-  refFeaturesId String?
+  // refFeature    Features? @relation("ref-feature", fields: [refFeaturesId], references: [id])
+  // refFeaturesId String?
 
   // views
   // rating
@@ -91,10 +87,9 @@ model Post {
   // privacy
   postComment PostComment[]
   project     Project?
-  features    Features?
+  // features    Features?
 }
 
-// ################################# Organization #############################
 model Organization {
   id          String       @id @default(uuid())
   name        String
@@ -111,7 +106,6 @@ model Organization {
   members     OrgMembers[]
 }
 
-// keeps track of MEMBERS OF ORGANIZATION
 model OrgMembers {
   org            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId String
@@ -132,13 +126,13 @@ enum MemberType {
 
 // ################################# Project #############################
 model Project {
-  id        String   @id @default(uuid())
-  urlid     String?  @unique
-  inviteCode String @default(uuid()) @unique
-  title     String
-  summary   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  urlid      String?  @unique
+  inviteCode String   @unique @default(uuid())
+  title      String
+  summary    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
@@ -160,7 +154,7 @@ model Project {
   // 						comments
   // 						features
   post             Post[]               @relation("ref-project")
-  projectXFeatures ProjectXFeatures[]
+  projectXFeatures Features[]
   ticket           Ticket[]
   members          ProjectContributor[]
 }
@@ -192,33 +186,21 @@ enum ProjectRole {
   DEVELOPER
 }
 
-// ################################# Features #############################
-// author, is public
 model Features {
-  id               String             @id @default(uuid())
-  title            String
-  description      String
-  necessaryLinks   String[]
-  process          String?
-  isPublic         Boolean            @default(true)
-  projectXFeatures ProjectXFeatures[]
+  id             String      @id @default(uuid())
+  title          String
+  description    String
+  necessaryLinks String[]
+  process        String?
+  isPublic       Boolean     @default(true)
+  featureType    FeatureType @default(ACTIVE)
 
-  basePost Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId   String @unique
-}
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
 
-model ProjectXFeatures {
-  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId   String
-  feature     Features    @relation(fields: [featuresId], references: [id])
-  featuresId  String
-  featureType FeatureType @default(ACTIVE)
-  owner       User        @relation(fields: [ownerId], references: [id])
-  ownerId     String
-  ticket      Ticket[]
-  post        Post[]
-
-  @@id([projectId, featuresId])
+  owner   User     @relation(fields: [ownerId], references: [id])
+  ownerId String
+  ticket  Ticket[]
 }
 
 enum FeatureType {
@@ -229,7 +211,6 @@ enum FeatureType {
   PROPOSED
 }
 
-// ################################# Comment #############################
 model PostComment {
   id String @id @default(uuid())
 
@@ -238,7 +219,6 @@ model PostComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   text      String
-  // postedAt DateTime @default(now())
 
   parentPost   Post   @relation(fields: [parentPostId], references: [id])
   parentPostId String
@@ -265,8 +245,6 @@ model TicketComment {
   successor     TicketComment[] @relation("commentHistory")
 }
 
-// ################################# Ticket #############################
-
 model Ticket {
   id          String   @id @default(uuid())
   title       String
@@ -279,10 +257,10 @@ model Ticket {
   ticketSeverity TicketSeverity?
   ticketPriority TicketPriority?
 
-  project                    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId                  String
-  feature                    ProjectXFeatures? @relation(fields: [projectId, projectXFeaturesFeaturesId], references: [projectId, featuresId])
-  projectXFeaturesFeaturesId String?
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  String
+  feature    Features? @relation(fields: [featuresId], references: [id])
+  featuresId String?
 
   ticketComment TicketComment[]
   ticketRoles   TicketRoles?

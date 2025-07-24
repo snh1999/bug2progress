@@ -6,16 +6,17 @@ import { CreateFeatureDto, UpdateFeatureDto } from './dto';
 export class FeatureService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateFeatureDto, userId: string) {
+  async create(projectId: string, dto: CreateFeatureDto, userId: string) {
     return this.prisma.features.create({
       data: {
         ...dto,
+        projectId: projectId,
         ownerId: userId,
       },
     });
   }
 
-  async findAll(projectId?: string) {
+  async findAll(projectId: string) {
     return await this.prisma.features.findMany({
       where: {
         projectId,

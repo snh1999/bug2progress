@@ -41,10 +41,6 @@ export class CreateFeatureDto {
   @IsOptional()
   isPublic?: boolean;
 
-  @IsString()
-  @IsNotEmpty()
-  projectId!: string;
-
   @IsEnum(FeatureType)
   @IsOptional()
   featureType?: FeatureType;

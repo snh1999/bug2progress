@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
-  Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FeatureService } from './feature.service';
 import { CreateFeatureDto } from './dto/feature-create.dto';
@@ -15,20 +15,26 @@ import { UpdateFeatureDto } from './dto/feature-update.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/common/guard';
 import { GetUser } from '@/common/decorator';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
 
 @ApiTags('Features')
+@UseInterceptors(ResponseTransformInterceptor)
 @UseGuards(JwtAuthGuard)
-@Controller('features')
+@Controller('projects/:projectId/features')
 export class FeatureController {
   constructor(private readonly featureService: FeatureService) {}
 
   @Post()
-  create(@Body() dto: CreateFeatureDto, @GetUser('id') userid: string) {
-    return this.featureService.create(dto, userid);
+  create(
+    @Body() dto: CreateFeatureDto,
+    @Param('projectId') projectId: string,
+    @GetUser('id') userid: string,
+  ) {
+    return this.featureService.create(projectId, dto, userid);
   }
 
   @Get()
-  findAll(@Query('projectId') projectId: string) {
+  findAll(@Param('projectId') projectId: string) {
     return this.featureService.findAll(projectId);
   }
 

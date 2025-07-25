@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFeatureDto, UpdateFeatureDto } from './dto';
 
@@ -24,14 +24,13 @@ export class FeatureService {
     });
   }
 
-  async findOne(id: string) {
-    const feature = await this.prisma.features.findFirst({
+  async findOne(id: string, projectId?: string) {
+    return this.prisma.features.findUniqueOrThrow({
       where: {
         id,
+        projectId,
       },
     });
-    if (!feature) throw new NotFoundException('404 Not found');
-    return feature;
   }
 
   async update(id: string, dto: UpdateFeatureDto, userId: string) {

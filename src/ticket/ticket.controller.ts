@@ -6,77 +6,63 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
-import {
-  CreateTicketDto,
-  TicketAssignDto,
-  TicketEnumDto,
-  UpdateStatusDto,
-  UpdateTicketDto,
-} from './dto';
+import { CreateTicketDto, UpdateTicketDto } from './dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
+import { JwtAuthGuard } from '@/common/guard';
 
 @ApiTags('Ticket')
-@Controller('ticket')
+@UseInterceptors(ResponseTransformInterceptor)
+@UseGuards(JwtAuthGuard)
+@Controller('projects/:projectId/features/:featureId/tickets')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Post()
-  create(@Body() dto: CreateTicketDto, @GetUser('id') userid: string) {
-    return this.ticketService.create(dto, userid);
+  create(
+    @Body() dto: CreateTicketDto,
+    @Param('featureId') featureId: string,
+    @Param('projectId') projectId: string,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketService.create(dto, featureId, projectId, userid);
   }
 
-  @Get('project/:projectId')
-  findAll(@Param('id') projectId: string) {
-    return this.ticketService.findAll(projectId);
+  @Get('')
+  findAll(
+    @Param('featureId') featureId: string,
+    @GetUser('id') userId: string,
+  ) {
+    return this.ticketService.findAll(featureId, userId);
   }
 
-  // view roles as  well
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ticketService.findOne(id);
+  findOne(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.ticketService.findOne(id, userId);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
+    @Param('projectId') projectId: string,
     @Body() dto: UpdateTicketDto,
     @GetUser('id') userid: string,
   ) {
-    return this.ticketService.update(id, dto, userid);
-  }
-
-  // @Patch(':id/roles')
-  // updateRoles(@Param('id') id: string, @Body() dto: TicketRoles) {
-  //   return this.ticketService.updateRoles(id, dto);
-  // }
-
-  @Patch(':ticketid/project/:projectId')
-  updateTicket(
-    @Param('projectId') projectId: string,
-    @Param('ticketid') ticketid: string,
-    @Body() dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
-    @GetUser('id') userid: string,
-  ) {
-    return this.ticketService.updateTicketRoles(
-      projectId,
-      ticketid,
-      dto,
-      userid,
-    );
+    return this.ticketService.update(id, projectId, dto, userid);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @GetUser('id') userid: string) {
-    return this.ticketService.remove(id, userid);
+  remove(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketService.remove(id, projectId, userid);
   }
 }
-
-// assigned to me
-// by me (author)
-// ticket roles // update roles
-
-// pending verification (later) - by project
-// no varified by

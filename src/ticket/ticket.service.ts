@@ -1,89 +1,69 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { TicketStatus } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectService } from '../project/project.service';
-import {
-  CreateTicketDto,
-  TicketAssignDto,
-  TicketEnumDto,
-  UpdateStatusDto,
-  UpdateTicketDto,
-} from './dto';
-import { UserService } from '@/user/user.service';
+import { CreateTicketDto, UpdateTicketDto } from './dto';
+import { FeatureService } from '@/feature/feature.service';
 
 @Injectable()
 export class TicketService {
   constructor(
     private prisma: PrismaService,
     private projectService: ProjectService,
-    private userService: UserService,
+    private featureService: FeatureService,
   ) {}
-  async create(dto: CreateTicketDto, userid: string) {
-    // create ticket
-    if (dto.projectId) {
-      const project = await this.projectService.find(dto.projectId);
-      dto.projectId = project.id;
-    }
-    // check feature x project
+  async create(
+    dto: CreateTicketDto,
+    featuresId: string,
+    projectId: string,
+    userId: string,
+  ) {
+    await this.featureService.findOne(featuresId, projectId);
+    await this.checkPermission(projectId, userId);
 
-    // create ticket
     const ticket = await this.prisma.ticket.create({
       data: {
         ...dto,
-        creatorId: userid,
-        ticketRoles: {
-          create: {},
-        },
+        featuresId,
+        projectId,
+        creatorId: userId,
       },
     });
 
-    // create ticketroles
-    // try {
-    //   await this.prisma.ticketRoles.create({
-    //     data: {
-    //       ticketId: ticket.id,
-    //     },
-    //   });
-    // } catch (error) {
-    //   // delete
-    //   await this.remove(ticket.id, userid);
-    //   throw new InternalServerErrorException('Couldnot create ticket');
-    // }
     return ticket;
   }
 
-  async findAll(projectId?: string) {
-    if (projectId)
-      return this.prisma.ticket.findMany({
-        where: {
-          projectId: projectId,
+  async findAll(featureId: string, userId: string) {
+    return this.prisma.ticket.findMany({
+      where: {
+        featuresId: featureId,
+        project: {
+          OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
         },
-      });
-    return this.prisma.ticket.findMany({});
+      },
+    });
   }
 
-  async findOne(id: string) {
-    const ticket = await this.prisma.ticket.findUnique({
+  async findOne(id: string, userId: string) {
+    return this.prisma.ticket.findUniqueOrThrow({
       where: {
         id,
-      },
-      include: {
-        ticketRoles: true,
+        project: {
+          OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
+        },
       },
     });
-    if (!ticket) throw new NotFoundException('404 not found');
-    return ticket;
   }
 
-  async update(id: string, dto: UpdateTicketDto, userid: string) {
-    return this.prisma.ticket.updateMany({
+  async update(
+    id: string,
+    projectId: string,
+    dto: UpdateTicketDto,
+    userid: string,
+  ) {
+    await this.checkPermission(projectId, userid);
+    return this.prisma.ticket.update({
       where: {
-        AND: [{ id }, { creatorId: userid }],
+        id,
       },
       data: {
         ...dto,
@@ -91,52 +71,12 @@ export class TicketService {
     });
   }
 
-  // async updateRoles(id: string, dto: TicketRoles) {
-  //   return await this.prisma.ticketRoles.update({
-  //     where: {
-  //       ticketId: id,
-  //     },
-  //     data: {
-  //       ...dto,
-  //     },
-  //   });
-  // }
-
-  async updateTicketRoles(
-    projectId: string,
-    ticketid: string,
-    dto: UpdateStatusDto | TicketEnumDto | TicketAssignDto,
-    userId: string,
-  ) {
-    // check user role (if authorized)
-    // if owner
-    const project = await this.projectService.find(projectId);
-    const userRole = await this.prisma.projectContributor.findFirst({
+  async remove(id: string, projectId: string, userid: string) {
+    await this.checkPermission(projectId, userid);
+    await this.prisma.ticket.delete({
       where: {
-        AND: [{ projectId: project.id }, { userId }],
-      },
-    });
-    if (dto instanceof UpdateStatusDto && dto.ticketStatus == 'PENDING_CLOSE')
-      await this.updateStatus(ticketid, dto, userId);
-    // user is not lead/manager or owner
-    if (!(project.ownerId == userId || userRole?.role != 'DEVELOPER'))
-      throw new UnauthorizedException('You are not owner or manager');
-
-    // update role
-    if (dto instanceof UpdateStatusDto)
-      return this.updateStatus(ticketid, dto, userId);
-    else if (dto instanceof TicketAssignDto) {
-      const idToAssign = await this.userService.getIdFromUser(dto.username);
-      return this.assignTicket(ticketid, idToAssign, userId);
-    } else if (dto instanceof TicketEnumDto) {
-      return this.verifyTicket(ticketid, dto, userId);
-    }
-  }
-
-  async remove(id: string, userid: string) {
-    await this.prisma.ticket.deleteMany({
-      where: {
-        AND: [{ id }, { creatorId: userid }],
+        id,
+        creatorId: userid,
       },
     });
     return {
@@ -144,82 +84,7 @@ export class TicketService {
     };
   }
 
-  async verifyTicket(id: string, dto: TicketEnumDto, userid: string) {
-    await this.prisma.ticket.update({
-      where: {
-        id,
-      },
-      data: {
-        ...dto,
-      },
-    });
-
-    const ticketRoles = await this.prisma.ticketRoles.findUnique({
-      where: {
-        ticketId: id,
-      },
-    });
-
-    if (ticketRoles?.ticketStatus == TicketStatus.PENDING) {
-      await this.prisma.ticketRoles.update({
-        where: {
-          ticketId: id,
-        },
-        data: {
-          ticketStatus: TicketStatus.VERIFIED,
-          varifierId: userid,
-          varifiedAt: new Date(Date.now()),
-        },
-      });
-    }
-  }
-
-  async assignTicket(id: string, idToAssign: string, userid: string) {
-    await this.prisma.ticketRoles.update({
-      where: {
-        ticketId: id,
-      },
-      data: {
-        ticketStatus: TicketStatus.ASSIGNED,
-        developerId: idToAssign,
-        assignedbyId: userid,
-        assignedToAt: new Date(Date.now()),
-      },
-    });
-  }
-
-  async updateStatus(id: string, dto: UpdateStatusDto, userid: string) {
-    const ticketRoles = await this.prisma.ticketRoles.findUnique({
-      where: {
-        ticketId: id,
-      },
-    });
-
-    if (
-      dto.ticketStatus == TicketStatus.PENDING_CLOSE &&
-      ticketRoles?.ticketStatus == TicketStatus.ASSIGNED &&
-      ticketRoles?.developerId == userid
-    ) {
-      return this.prisma.ticketRoles.update({
-        where: {
-          ticketId: id,
-        },
-        data: {
-          ticketStatus: dto.ticketStatus,
-        },
-      });
-    } else if (dto.ticketStatus == TicketStatus.CLOSED) {
-      return this.prisma.ticketRoles.update({
-        where: {
-          ticketId: id,
-        },
-        data: {
-          ticketStatus: dto.ticketStatus,
-          closedAt: new Date(Date.now()),
-          closeId: userid,
-        },
-      });
-    }
-    throw new BadRequestException('Could not perform operation');
+  async checkPermission(projectId: string, userId: string) {
+    await this.projectService.findOne(projectId, userId);
   }
 }

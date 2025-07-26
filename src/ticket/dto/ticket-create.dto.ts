@@ -1,5 +1,11 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { TicketType } from '@prisma/client';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { TicketPriority, TicketStatus, TicketType } from '@prisma/client';
 export class CreateTicketDto {
   @IsString()
   @IsNotEmpty()
@@ -13,11 +19,19 @@ export class CreateTicketDto {
   @IsNotEmpty()
   ticketType!: TicketType;
 
-  @IsString()
+  @IsEnum(TicketPriority)
   @IsNotEmpty()
-  projectId!: string;
+  ticketPriority!: TicketPriority;
+
+  @IsEnum(TicketStatus)
+  @IsNotEmpty()
+  ticketStatus!: TicketStatus;
+
+  @IsInt()
+  @IsNotEmpty()
+  position!: number;
 
   @IsString()
   @IsOptional()
-  projectXFeaturesFeaturesId?: string;
+  assignedbyId?: string;
 }

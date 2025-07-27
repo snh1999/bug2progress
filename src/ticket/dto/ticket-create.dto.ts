@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -16,11 +17,11 @@ export class CreateTicketDto {
   description!: string;
 
   @IsEnum(TicketType)
-  @IsNotEmpty()
-  ticketType!: TicketType;
+  @IsOptional()
+  ticketType?: TicketType;
 
   @IsEnum(TicketPriority)
-  @IsNotEmpty()
+  @IsOptional()
   ticketPriority!: TicketPriority;
 
   @IsEnum(TicketStatus)
@@ -33,5 +34,9 @@ export class CreateTicketDto {
 
   @IsString()
   @IsOptional()
-  assignedbyId?: string;
+  assignedContributorId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dueAt?: string;
 }

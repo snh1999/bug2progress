@@ -5,5 +5,5 @@ import { IsOptional, IsString } from 'class-validator';
 export class UpdateTicketDto extends PartialType(CreateTicketDto) {
   @IsOptional()
   @IsString()
-  varifierId?: string;
+  verifierId?: string;
 }

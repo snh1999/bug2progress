@@ -10,5 +10,5 @@ export const getTicketExpectedStructure = () =>
     ticketPriority: expect.any(String),
     ticketStatus: expect.any(String),
     projectId: expect.any(String),
-    featuresId: expect.any(String),
+    featureId: expect.any(String),
   });

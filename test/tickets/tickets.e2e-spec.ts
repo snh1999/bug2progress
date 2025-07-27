@@ -136,7 +136,7 @@ describe('App e2e', () => {
         data.forEach((ticket: any) => {
           expect(ticket.creatorId).toBe(project.ownerId);
           expect(ticket.projectId).toBe(project.id);
-          expect(ticket.featuresId).toBe(feature.id);
+          expect(ticket.featureId).toBe(feature.id);
         });
       });
 
@@ -167,7 +167,7 @@ describe('App e2e', () => {
         expect(data.length).toBeGreaterThanOrEqual(1);
         data.forEach((ticket: any) => {
           expect(ticket.projectId).toBe(anotherProject.id);
-          expect(ticket.featuresId).toBe(anotherFeature.id);
+          expect(ticket.featureId).toBe(anotherFeature.id);
         });
       });
 

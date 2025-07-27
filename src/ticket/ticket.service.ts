@@ -13,17 +13,17 @@ export class TicketService {
   ) {}
   async create(
     dto: CreateTicketDto,
-    featuresId: string,
+    featureId: string,
     projectId: string,
     userId: string,
   ) {
-    await this.featureService.findOne(featuresId, projectId);
+    await this.featureService.findOne(featureId, projectId);
     await this.checkPermission(projectId, userId);
 
     const ticket = await this.prisma.ticket.create({
       data: {
         ...dto,
-        featuresId,
+        featureId,
         projectId,
         creatorId: userId,
       },
@@ -35,7 +35,7 @@ export class TicketService {
   async findAll(featureId: string, userId: string) {
     return this.prisma.ticket.findMany({
       where: {
-        featuresId: featureId,
+        featureId,
         project: {
           OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
         },

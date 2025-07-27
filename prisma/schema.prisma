@@ -26,7 +26,7 @@ model User {
   postComment         PostComment[]
   ticketComment       TicketComment[]
   ticketCreator       Ticket[]
-  ticketVarifier      Ticket[]        @relation("varifier")
+  ticketVerifier      Ticket[]        @relation("verifier")
   ticketAssigner      Ticket[]        @relation("assign")
   projectXFeatures    Features[]
 
@@ -143,7 +143,6 @@ model Project {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
-  // status - in dev | released version | depricated
   // 			project page shows the
   // 						project details
   // 						issues associated
@@ -203,7 +202,7 @@ model Features {
 enum FeatureType {
   MAINTAINED
   ACTIVE
-  DEPRICATED
+  DEPRECATED
   OBSOLETE
   PROPOSED
 }
@@ -243,29 +242,30 @@ model TicketComment {
 }
 
 model Ticket {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String
-  createdAt   DateTime @default(now())
-  creator     User     @relation(fields: [creatorId], references: [id])
+  createdAt   DateTime  @default(now())
+  dueAt       DateTime?
+  creator     User      @relation(fields: [creatorId], references: [id])
   creatorId   String
   position    Int
 
-  ticketType     TicketType
+  ticketType     TicketType?
   ticketPriority TicketPriority?
   ticketStatus   TicketStatus    @default(BACKLOG)
 
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId  String
-  feature    Features? @relation(fields: [featuresId], references: [id])
-  featuresId String?
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  feature   Features? @relation(fields: [featureId], references: [id])
+  featureId String?
 
-  varifiedBy User?     @relation("varifier", fields: [varifierId], references: [id])
-  varifierId String?
-  varifiedAt DateTime?
+  verifiedBy User?     @relation("verifier", fields: [verifierId], references: [id])
+  verifierId String?
+  verifiedAt DateTime?
 
-  assignedBy   User?   @relation("assign", fields: [assignedbyId], references: [id])
-  assignedbyId String?
+  assignedContributor   User?   @relation("assign", fields: [assignedContributorId], references: [id])
+  assignedContributorId String?
 
   ticketComment TicketComment[]
 }
@@ -275,6 +275,12 @@ enum TicketType {
   TECH_DEBT
   ENHANCEMENT
   FEATURE
+  SPIKE
+  STORY
+  TASK
+  EPIC
+  SUPPORT
+  TEST
 }
 
 enum TicketStatus {
@@ -283,10 +289,16 @@ enum TicketStatus {
   IN_PROGRESS
   IN_REVIEW
   DONE
+  BLOCKED
+  IN_QA
+  DEPLOYED
+  ARCHIVED
+  CANCELED
 }
 
 enum TicketPriority {
   CRITICAL
+  URGENT
   HIGH
   MEDIUM
   LOW

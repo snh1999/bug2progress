@@ -195,6 +195,37 @@ describe('App e2e', () => {
           .expect(HttpStatus.OK)
           .expect(({ body: { data } }) => expect(data.length).toBe(0));
       });
+
+      it('should return OK (200) satisfying the query', async () => {
+        const newProject = await createTestProject(httpServer, accessToken);
+        const newFeature = await createTestFeature(
+          httpServer,
+          accessToken,
+          newProject.id,
+        );
+        const ticket = await createTestTicket(
+          httpServer,
+          accessToken,
+          newProject.id,
+          newFeature.id,
+        );
+        const query = `creatorId=${ticket.creatorId}`;
+
+        const res = await request(httpServer)
+          .get(
+            `/projects/${project.id}/features/${feature.id}/tickets?${query}`,
+          )
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.OK);
+
+        expect(res.body.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              creatorId: ticket.creatorId,
+            }),
+          ]),
+        );
+      });
     });
 
     describe('GET /projects/:id', () => {

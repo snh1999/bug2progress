@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProjectService } from '../project/project.service';
 import { CreateTicketDto, UpdateTicketDto } from './dto';
 import { FeatureService } from '@/feature/feature.service';
+import { FindAllTicketsQuery } from './dto/find-ticket.query';
 
 @Injectable()
 export class TicketService {
@@ -32,13 +33,45 @@ export class TicketService {
     return ticket;
   }
 
-  async findAll(featureId: string, userId: string) {
+  async findAll(featureId: string, query: FindAllTicketsQuery, userId: string) {
+    const {
+      title,
+      description,
+      dueAt,
+      creatorId,
+      position,
+      ticketType,
+      ticketPriority,
+      ticketStatus,
+      projectId,
+      verifierId,
+      assignedContributorId,
+    } = query;
+
+    const conditions: any = {
+      ...(title && { title: { contains: title, mode: 'insensitive' } }),
+      ...(description && {
+        description: { contains: description, mode: 'insensitive' },
+      }),
+      ...(dueAt && { dueAt: new Date(dueAt) }),
+      ...(creatorId && { creatorId }),
+      ...(typeof position === 'number' && { position }),
+      ...(ticketType && { ticketType }),
+      ...(ticketPriority && { ticketPriority }),
+      ...(ticketStatus && { ticketStatus }),
+      ...(projectId && { projectId }),
+      ...(featureId && { featureId }),
+      ...(verifierId && { verifierId }),
+      ...(assignedContributorId && { assignedContributorId }),
+      project: {
+        OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
+      },
+    };
+
     return this.prisma.ticket.findMany({
-      where: {
-        featureId,
-        project: {
-          OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
-        },
+      where: conditions,
+      orderBy: {
+        position: 'asc',
       },
     });
   }

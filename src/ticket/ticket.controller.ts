@@ -8,6 +8,7 @@ import {
   Delete,
   UseInterceptors,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto, UpdateTicketDto } from './dto';
@@ -15,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
 import { JwtAuthGuard } from '@/common/guard';
+import { FindAllTicketsQuery } from './dto/find-ticket.query';
 
 @ApiTags('Ticket')
 @UseInterceptors(ResponseTransformInterceptor)
@@ -36,9 +38,10 @@ export class TicketController {
   @Get('')
   findAll(
     @Param('featureId') featureId: string,
+    @Query() query: FindAllTicketsQuery,
     @GetUser('id') userId: string,
   ) {
-    return this.ticketService.findAll(featureId, userId);
+    return this.ticketService.findAll(featureId, query, userId);
   }
 
   @Get(':id')

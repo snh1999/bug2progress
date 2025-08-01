@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectService } from '../project/project.service';
-import { CreateTicketDto, UpdateTicketDto } from './dto';
+import {
+  CreateTicketDto,
+  UpdateTicketDto,
+  UpdateTicketPositionDto,
+} from './dto';
 import { FeatureService } from '@/feature/feature.service';
 import { FindAllTicketsQuery } from './dto/find-ticket.query';
 
@@ -70,6 +74,12 @@ export class TicketService {
 
     return this.prisma.ticket.findMany({
       where: conditions,
+      include: {
+        feature: true,
+        creator: { include: { profile: true } },
+        assignedContributor: { include: { profile: true } },
+        verifiedBy: { include: { profile: true } },
+      },
       orderBy: {
         position: 'asc',
       },
@@ -84,6 +94,27 @@ export class TicketService {
           OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
         },
       },
+    });
+  }
+
+  async updateArrangement(
+    projectId: string,
+    dto: UpdateTicketPositionDto,
+    userid: string,
+  ) {
+    await this.checkPermission(projectId, userid);
+
+    const { data } = dto;
+
+    return this.prisma.$transaction(async (prisma) => {
+      const updates = data.map(({ id, position }) =>
+        prisma.ticket.update({
+          where: { id },
+          data: { position },
+        }),
+      );
+
+      return Promise.all(updates);
     });
   }
 

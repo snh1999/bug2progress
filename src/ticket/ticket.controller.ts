@@ -11,7 +11,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
-import { CreateTicketDto, UpdateTicketDto } from './dto';
+import {
+  CreateTicketDto,
+  UpdateTicketDto,
+  UpdateTicketPositionDto,
+} from './dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
@@ -42,6 +46,15 @@ export class TicketController {
     @GetUser('id') userId: string,
   ) {
     return this.ticketService.findAll(featureId, query, userId);
+  }
+
+  @Patch('')
+  updateArrangement(
+    @Param('projectId') projectId: string,
+    @Body() dto: UpdateTicketPositionDto,
+    @GetUser('id') userid: string,
+  ) {
+    return this.ticketService.updateArrangement(projectId, dto, userid);
   }
 
   @Get(':id')

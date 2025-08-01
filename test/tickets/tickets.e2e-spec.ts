@@ -6,9 +6,14 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { getAccessToken } from '../helpers/access-token.helper';
 import { createTestTicket, getCreateTicketMockDto } from './tickets.test-data';
 import { createTestProject } from '../project/project.test-data';
-import { CreateTicketDto, UpdateTicketDto } from '@/ticket/dto';
+import {
+  CreateTicketDto,
+  UpdateTicketDto,
+  UpdateTicketPositionDto,
+} from '@/ticket/dto';
 import { createTestFeature } from '../feature/feature.test-data';
 import { getTicketExpectedStructure } from './tickets.expected-structure';
+import { Ticket } from '@prisma/client';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -228,6 +233,99 @@ describe('App e2e', () => {
       });
     });
 
+    describe('PATCH /projects/:id/features/:id/tickets', () => {
+      let updateTicketsDto: UpdateTicketPositionDto;
+
+      beforeEach(async () => {
+        const data = await Promise.all([
+          createTestTicket(httpServer, accessToken, project.id, feature.id),
+          createTestTicket(httpServer, accessToken, project.id, feature.id),
+          createTestTicket(httpServer, accessToken, project.id, feature.id),
+        ]);
+
+        updateTicketsDto = { data: [] };
+        data.forEach((ticket) => {
+          updateTicketsDto.data.push({
+            id: ticket.id,
+            position: Math.floor(Math.random()) * 10,
+          });
+        });
+      });
+
+      it('should return OK (200) and successfully update a feature', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(updateTicketsDto)
+          .expect(HttpStatus.OK)
+          .expect(({ body: { data } }) => {
+            data.forEach((ticket: Ticket, index: number) => {
+              expect(ticket).toEqual(getTicketExpectedStructure());
+              expect(ticket.position).toBe(
+                updateTicketsDto.data[index].position,
+              );
+            });
+          });
+
+        updateTicketsDto.data.forEach(async (ticket) => {
+          expect(ticket.position).toBe(
+            (
+              await dbService.ticket.update({
+                where: { id: ticket.id },
+                data: { position: ticket.position },
+              })
+            )?.position,
+          );
+        });
+      });
+
+      it('should return UNAUTHORIZED (401) without auth token', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .send(updateTicketsDto)
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+
+      it('should return NOT_FOUND (404) when non project member tries to access', async () => {
+        const anotherUserToken = await getAccessToken(httpServer);
+
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .set('Authorization', `Bearer ${anotherUserToken}`)
+          .send(updateTicketsDto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('should return NOT_FOUND (404) for non-existent ticket in the array', async () => {
+        updateTicketsDto.data.push({
+          id: 'invalid-id',
+          position: 0,
+        });
+
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(updateTicketsDto)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('should return BAD_REQUEST (400) for invalid update data', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({ title: '' })
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+
+      it('should return BAD_REQUEST (400) for invalid update data(empty array)', async () => {
+        await request(httpServer)
+          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({ data: [] })
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+    });
+
     describe('GET /projects/:id', () => {
       let ticket: any;
 
@@ -305,7 +403,7 @@ describe('App e2e', () => {
 
         updateTicketsDto = {
           title: 'Updated Project Title',
-          description: 'Updated project summary',
+          description: 'Updated ticket summary',
         };
       });
 

@@ -107,10 +107,10 @@ export class TicketService {
     const { data } = dto;
 
     return this.prisma.$transaction(async (prisma) => {
-      const updates = data.map(({ id, position }) =>
+      const updates = data.map(({ id, ...rest }) =>
         prisma.ticket.update({
           where: { id },
-          data: { position },
+          data: rest,
         }),
       );
 

@@ -13,7 +13,7 @@ import {
 } from '@/ticket/dto';
 import { createTestFeature } from '../feature/feature.test-data';
 import { getTicketExpectedStructure } from './tickets.expected-structure';
-import { Ticket } from '@prisma/client';
+import { Ticket, TicketStatus } from '@prisma/client';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -248,6 +248,7 @@ describe('App e2e', () => {
           updateTicketsDto.data.push({
             id: ticket.id,
             position: Math.floor(Math.random()) * 10,
+            ticketStatus: TicketStatus.TODO,
           });
         });
       });
@@ -261,6 +262,9 @@ describe('App e2e', () => {
           .expect(({ body: { data } }) => {
             data.forEach((ticket: Ticket, index: number) => {
               expect(ticket).toEqual(getTicketExpectedStructure());
+              expect(ticket.ticketStatus).toBe(
+                updateTicketsDto.data[index].ticketStatus,
+              );
               expect(ticket.position).toBe(
                 updateTicketsDto.data[index].position,
               );
@@ -268,14 +272,11 @@ describe('App e2e', () => {
           });
 
         updateTicketsDto.data.forEach(async (ticket) => {
-          expect(ticket.position).toBe(
-            (
-              await dbService.ticket.update({
-                where: { id: ticket.id },
-                data: { position: ticket.position },
-              })
-            )?.position,
-          );
+          const dbTicket = await dbService.ticket.findUnique({
+            where: { id: ticket.id },
+          });
+          expect(ticket.position).toBe(dbTicket?.position);
+          expect(ticket.ticketStatus).toBe(dbTicket?.ticketStatus);
         });
       });
 
@@ -300,6 +301,7 @@ describe('App e2e', () => {
         updateTicketsDto.data.push({
           id: 'invalid-id',
           position: 0,
+          ticketStatus: TicketStatus.IN_PROGRESS,
         });
 
         await request(httpServer)

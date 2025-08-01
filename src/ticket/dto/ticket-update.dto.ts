@@ -3,6 +3,7 @@ import { CreateTicketDto } from './ticket-create.dto';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -10,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { TicketStatus } from '@prisma/client';
 
 export class UpdateTicketDto extends PartialType(CreateTicketDto) {
   @IsOptional()
@@ -25,6 +27,10 @@ class UpdateTicketPosition {
   @IsNumber()
   @IsNotEmpty()
   position!: number;
+
+  @IsEnum(TicketStatus)
+  @IsNotEmpty()
+  ticketStatus!: TicketStatus;
 }
 
 export class UpdateTicketPositionDto {

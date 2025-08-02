@@ -44,7 +44,7 @@ describe('App e2e', () => {
   });
 
   describe('TicketController (e2e)', () => {
-    describe('POST /projects/:projectId/features/:featureId/tickets', () => {
+    describe('POST /projects/:projectId/tickets', () => {
       let createTicketsDto: CreateTicketDto;
 
       beforeEach(async () => {
@@ -55,7 +55,7 @@ describe('App e2e', () => {
         const {
           body: { data },
         } = await request(httpServer)
-          .post(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .post(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(createTicketsDto)
           .expect(HttpStatus.CREATED);
@@ -65,27 +65,50 @@ describe('App e2e', () => {
           where: { id: data.id },
         });
         expect(dbTicket).toBeDefined();
+        expect(dbTicket?.title).toBe(data.title);
+        expect(dbTicket?.description).toBe(data.description);
+        expect(dbTicket?.ticketStatus).toBe(data.ticketStatus);
+        expect(dbTicket?.position).toBe(data.position);
+        expect(dbTicket?.projectId).toBe(project.id);
+      });
+
+      it('should successfully create a ticket with feature id and return CREATED (201) when request with valid data and auth', async () => {
+        const dto = { ...createTicketsDto, featureId: feature.id };
+        const {
+          body: { data },
+        } = await request(httpServer)
+          .post(`/projects/${project.id}/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send(dto)
+          .expect(HttpStatus.CREATED);
+
+        expect(data).toEqual(getTicketExpectedStructure());
+        const dbTicket = await dbService.ticket.findUnique({
+          where: { id: data.id },
+        });
+        expect(dbTicket?.featureId).toBe(feature.id);
       });
 
       it('should return NOT_FOUND (404) for invalid feature id and project id combination', async () => {
         const anotherProject = await createTestProject(httpServer, accessToken);
+        const dto = { ...createTicketsDto, featureId: feature.id };
         await request(httpServer)
-          .post(`/projects/${anotherProject.id}/features/${feature.id}/tickets`)
+          .post(`/projects/${anotherProject.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
-          .send(createTicketsDto)
+          .send(dto)
           .expect(HttpStatus.NOT_FOUND);
       });
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .post(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .post(`/projects/${project.id}/tickets`)
           .send(createTicketsDto)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
       it('should return UNAUTHORIZED (401) with invalid token', async () => {
         await request(httpServer)
-          .post(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .post(`/projects/${project.id}/tickets`)
           .set('Authorization', 'Bearer invalid-token')
           .send(createTicketsDto)
           .expect(HttpStatus.UNAUTHORIZED);
@@ -95,14 +118,14 @@ describe('App e2e', () => {
         const { title: _, ...invalidDtoWithoutTitle } = createTicketsDto;
 
         await request(httpServer)
-          .post(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .post(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(invalidDtoWithoutTitle)
           .expect(HttpStatus.BAD_REQUEST);
       });
     });
 
-    describe('GET /projects/:projectId/features/:featureId/tickets', () => {
+    describe('GET /projects/:projectId/tickets', () => {
       beforeEach(async () => {
         await Promise.all([
           createTestTicket(httpServer, accessToken, project.id, feature.id),
@@ -112,7 +135,7 @@ describe('App e2e', () => {
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .get(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .get(`/projects/${project.id}/tickets`)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
@@ -120,28 +143,16 @@ describe('App e2e', () => {
         const {
           body: { data },
         } = await request(httpServer)
-          .get(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .get(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
 
         expect(Array.isArray(data)).toBe(true);
         expect(data.length).toBeGreaterThanOrEqual(2);
         expect(data[0]).toEqual(getTicketExpectedStructure());
-      });
-
-      it('should return OK (200) with all tickets of the given project id and feature id', async () => {
-        const {
-          body: { data },
-        } = await request(httpServer)
-          .get(`/projects/${project.id}/features/${feature.id}/tickets`)
-          .set('Authorization', `Bearer ${accessToken}`)
-          .expect(HttpStatus.OK);
-
-        expect(Array.isArray(data)).toBe(true);
         data.forEach((ticket: any) => {
           expect(ticket.creatorId).toBe(project.ownerId);
           expect(ticket.projectId).toBe(project.id);
-          expect(ticket.featureId).toBe(feature.id);
         });
       });
 
@@ -158,12 +169,18 @@ describe('App e2e', () => {
           anotherProject.id,
           anotherFeature.id,
         );
+        await createTestTicket(
+          httpServer,
+          accessToken,
+          anotherProject.id,
+          anotherFeature.id,
+        );
 
         const {
           body: { data },
         } = await request(httpServer)
           .get(
-            `/projects/${anotherProject.id}/features/${anotherFeature.id}/tickets`,
+            `/projects/${anotherProject.id}/tickets?featureId=${anotherFeature.id}`,
           )
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
@@ -178,24 +195,29 @@ describe('App e2e', () => {
 
       it('should return UNAUTHORIZED (401) when invalid token is provided', async () => {
         await request(httpServer)
-          .get(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .get(`/projects/${project.id}/tickets`)
           .set('Authorization', 'Bearer invalid-token')
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('should return OK (200) with empty array when non project member tries to access', async () => {
+      it('should return FORBIDDEN(403) with empty array when non project member tries to access', async () => {
         const anotherAccessToken = await getAccessToken(httpServer);
         await request(httpServer)
-          .get(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .get(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${anotherAccessToken}`)
-          .expect(HttpStatus.OK)
-          .expect(({ body: { data } }) => expect(data.length).toBe(0));
+          .expect(HttpStatus.FORBIDDEN);
+      });
+
+      it('should return FORBIDDEN(403) with empty array when project does not exist(invalid id)', async () => {
+        await request(httpServer)
+          .get(`/projects/invalid-id/tickets`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(HttpStatus.FORBIDDEN);
       });
 
       it('should return OK (200) with empty array when feature does not exist(invalid id)', async () => {
-        const nonExistentId = '00000000-0000-0000-0000';
         await request(httpServer)
-          .get(`/projects/${project.id}/features/${nonExistentId}/tickets`)
+          .get(`/projects/${project.id}/tickets?featureId=invalid-id`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
           .expect(({ body: { data } }) => expect(data.length).toBe(0));
@@ -217,9 +239,7 @@ describe('App e2e', () => {
         const query = `creatorId=${ticket.creatorId}`;
 
         const res = await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets?${query}`,
-          )
+          .get(`/projects/${project.id}/tickets?${query}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
 
@@ -233,7 +253,7 @@ describe('App e2e', () => {
       });
     });
 
-    describe('PATCH /projects/:id/features/:id/tickets', () => {
+    describe('PATCH /projects/:projectId/tickets', () => {
       let updateTicketsDto: UpdateTicketPositionDto;
 
       beforeEach(async () => {
@@ -255,7 +275,7 @@ describe('App e2e', () => {
 
       it('should return OK (200) and successfully update a feature', async () => {
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateTicketsDto)
           .expect(HttpStatus.OK)
@@ -282,19 +302,19 @@ describe('App e2e', () => {
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .send(updateTicketsDto)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('should return NOT_FOUND (404) when non project member tries to access', async () => {
+      it('should return FORBIDDEN(403) when non project member tries to access', async () => {
         const anotherUserToken = await getAccessToken(httpServer);
 
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${anotherUserToken}`)
           .send(updateTicketsDto)
-          .expect(HttpStatus.NOT_FOUND);
+          .expect(HttpStatus.FORBIDDEN);
       });
 
       it('should return NOT_FOUND (404) for non-existent ticket in the array', async () => {
@@ -305,7 +325,7 @@ describe('App e2e', () => {
         });
 
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateTicketsDto)
           .expect(HttpStatus.NOT_FOUND);
@@ -313,7 +333,7 @@ describe('App e2e', () => {
 
       it('should return BAD_REQUEST (400) for invalid update data', async () => {
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send({ title: '' })
           .expect(HttpStatus.BAD_REQUEST);
@@ -321,14 +341,14 @@ describe('App e2e', () => {
 
       it('should return BAD_REQUEST (400) for invalid update data(empty array)', async () => {
         await request(httpServer)
-          .patch(`/projects/${project.id}/features/${feature.id}/tickets`)
+          .patch(`/projects/${project.id}/tickets`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send({ data: [] })
           .expect(HttpStatus.BAD_REQUEST);
       });
     });
 
-    describe('GET /projects/:id', () => {
+    describe('GET /projects/:projectId/tickets/:id', () => {
       let ticket: any;
 
       beforeEach(async () => {
@@ -342,9 +362,7 @@ describe('App e2e', () => {
 
       it('should return OK (200) and a ticket by ID when authenticated', async () => {
         await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets/${ticket.id}`,
-          )
+          .get(`/projects/${project.id}/tickets/${ticket.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
           .expect(({ body: { data } }) => {
@@ -356,9 +374,7 @@ describe('App e2e', () => {
       it('should return NOT_FOUND (404) and a ticket by ID when non member tries to access', async () => {
         const anotherAccessToken = await getAccessToken(httpServer);
         await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets/${ticket.id}`,
-          )
+          .get(`/projects/${project.id}/tickets/${ticket.id}`)
           .set('Authorization', `Bearer ${anotherAccessToken}`)
           .expect(HttpStatus.NOT_FOUND);
       });
@@ -366,32 +382,26 @@ describe('App e2e', () => {
       it('should return NOT_FOUND (404) when ticket does not exist(invalid id)', async () => {
         const nonExistentId = '00000000-0000-0000-0000';
         await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets/${nonExistentId}`,
-          )
+          .get(`/projects/${project.id}/tickets/${nonExistentId}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.NOT_FOUND);
       });
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets/${ticket.id}`,
-          )
+          .get(`/projects/${project.id}/tickets/${ticket.id}`)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
       it('should return UNAUTHORIZED (401) with invalid token', async () => {
         await request(httpServer)
-          .get(
-            `/projects/${project.id}/features/${feature.id}/tickets/${ticket.id}`,
-          )
+          .get(`/projects/${project.id}/tickets/${ticket.id}`)
           .set('Authorization', 'Bearer invalid-token')
           .expect(HttpStatus.UNAUTHORIZED);
       });
     });
 
-    describe('PATCH /projects/:id/features/:id/tickets/:id', () => {
+    describe('PATCH /projects/:projectId/tickets/:id', () => {
       let existingTicket: any;
       let updateTicketsDto: UpdateTicketDto;
 
@@ -411,9 +421,7 @@ describe('App e2e', () => {
 
       it('should return OK (200) and successfully update a feature', async () => {
         await request(httpServer)
-          .patch(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .patch(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateTicketsDto)
           .expect(HttpStatus.OK)
@@ -434,31 +442,25 @@ describe('App e2e', () => {
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .patch(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .patch(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .send(updateTicketsDto)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('should return NOT_FOUND (404) when non project member tries to access', async () => {
+      it('should return FORBIDDEN(403) when non project member tries to access', async () => {
         const anotherUserToken = await getAccessToken(httpServer);
 
         await request(httpServer)
-          .patch(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .patch(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .set('Authorization', `Bearer ${anotherUserToken}`)
           .send(updateTicketsDto)
-          .expect(HttpStatus.NOT_FOUND);
+          .expect(HttpStatus.FORBIDDEN);
       });
 
       it('should return NOT_FOUND (404) for non-existent project', async () => {
         const fakeId = '00000000-0000-0000-0000';
         await request(httpServer)
-          .patch(
-            `/projects/${project.id}/features/${feature.id}/tickets/${fakeId}`,
-          )
+          .patch(`/projects/${project.id}/tickets/${fakeId}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send(updateTicketsDto)
           .expect(HttpStatus.NOT_FOUND);
@@ -466,16 +468,14 @@ describe('App e2e', () => {
 
       it('should return BAD_REQUEST (400) for invalid update data', async () => {
         await request(httpServer)
-          .patch(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .patch(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .send({ title: '' })
           .expect(HttpStatus.BAD_REQUEST);
       });
     });
 
-    describe('DELETE /projects/:id', () => {
+    describe('DELETE /projects/:projectId/tickets/:id', () => {
       let existingTicket: any;
 
       beforeEach(async () => {
@@ -489,9 +489,7 @@ describe('App e2e', () => {
 
       it('should successfully delete a ticket and return OK (200)', async () => {
         await request(httpServer)
-          .delete(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .delete(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK)
           .expect(({ body: { data } }) => {
@@ -506,26 +504,22 @@ describe('App e2e', () => {
 
       it('should return UNAUTHORIZED (401) without auth token', async () => {
         await request(httpServer)
-          .delete(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .delete(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('should return NOT_FOUND (404) when non project member tries to delete', async () => {
+      it('should return FORBIDDEN(403) when non project member tries to delete', async () => {
         const anotherUserToken = await getAccessToken(httpServer);
 
         await request(httpServer)
-          .delete(
-            `/projects/${project.id}/features/${feature.id}/tickets/${existingTicket.id}`,
-          )
+          .delete(`/projects/${project.id}/tickets/${existingTicket.id}`)
           .set('Authorization', `Bearer ${anotherUserToken}`)
-          .expect(HttpStatus.NOT_FOUND);
+          .expect(HttpStatus.FORBIDDEN);
       });
 
       it('should return NOT_FOUND (404) for non-existent ticket', async () => {
         await request(httpServer)
-          .delete(`/projects/${project.id}/features/${existingTicket.id}`)
+          .delete(`/projects/${project.id}/tickets/non-existent-id`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.NOT_FOUND);
       });

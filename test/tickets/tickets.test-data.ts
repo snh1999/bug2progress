@@ -17,12 +17,15 @@ export const createTestTicket = async (
   httpServer: THttpServer,
   accessToken: string,
   projectId: string,
-  featureId: string,
+  featureId?: string,
   createProjectDto?: CreateTicketDto,
-): Promise<any> =>
-  (
+): Promise<any> => {
+  createProjectDto = createProjectDto ?? getCreateTicketMockDto();
+
+  return (
     await request(httpServer)
-      .post(`/projects/${projectId}/features/${featureId}/tickets`)
+      .post(`/projects/${projectId}/tickets`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send(createProjectDto ?? getCreateTicketMockDto())
+      .send({ ...createProjectDto, featureId })
   ).body.data;
+};

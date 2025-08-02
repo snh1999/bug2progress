@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectService } from '../project/project.service';
 import {
@@ -16,19 +16,14 @@ export class TicketService {
     private projectService: ProjectService,
     private featureService: FeatureService,
   ) {}
-  async create(
-    dto: CreateTicketDto,
-    featureId: string,
-    projectId: string,
-    userId: string,
-  ) {
-    await this.featureService.findOne(featureId, projectId);
+  async create(dto: CreateTicketDto, projectId: string, userId: string) {
+    if (dto.featureId)
+      await this.featureService.findOne(dto.featureId, projectId);
     await this.checkPermission(projectId, userId);
 
     const ticket = await this.prisma.ticket.create({
       data: {
         ...dto,
-        featureId,
         projectId,
         creatorId: userId,
       },
@@ -37,7 +32,7 @@ export class TicketService {
     return ticket;
   }
 
-  async findAll(featureId: string, query: FindAllTicketsQuery, userId: string) {
+  async findAll(projectId: string, query: FindAllTicketsQuery, userId: string) {
     const {
       title,
       description,
@@ -47,7 +42,7 @@ export class TicketService {
       ticketType,
       ticketPriority,
       ticketStatus,
-      projectId,
+      featureId,
       verifierId,
       assignedContributorId,
     } = query;
@@ -63,17 +58,18 @@ export class TicketService {
       ...(ticketType && { ticketType }),
       ...(ticketPriority && { ticketPriority }),
       ...(ticketStatus && { ticketStatus }),
-      ...(projectId && { projectId }),
       ...(featureId && { featureId }),
       ...(verifierId && { verifierId }),
       ...(assignedContributorId && { assignedContributorId }),
-      project: {
-        OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
-      },
     };
 
+    await this.checkPermission(projectId, userId);
+
     return this.prisma.ticket.findMany({
-      where: conditions,
+      where: {
+        projectId,
+        ...conditions,
+      },
       include: {
         feature: true,
         creator: { include: { profile: true } },
@@ -149,6 +145,10 @@ export class TicketService {
   }
 
   async checkPermission(projectId: string, userId: string) {
-    await this.projectService.findOne(projectId, userId);
+    try {
+      await this.projectService.findOne(projectId, userId);
+    } catch {
+      throw new ForbiddenException('Invalid project or contributor');
+    }
   }
 }

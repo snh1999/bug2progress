@@ -25,27 +25,26 @@ import { FindAllTicketsQuery } from './dto/find-ticket.query';
 @ApiTags('Ticket')
 @UseInterceptors(ResponseTransformInterceptor)
 @UseGuards(JwtAuthGuard)
-@Controller('projects/:projectId/features/:featureId/tickets')
+@Controller('projects/:projectId/tickets')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Post()
   create(
     @Body() dto: CreateTicketDto,
-    @Param('featureId') featureId: string,
     @Param('projectId') projectId: string,
     @GetUser('id') userid: string,
   ) {
-    return this.ticketService.create(dto, featureId, projectId, userid);
+    return this.ticketService.create(dto, projectId, userid);
   }
 
   @Get('')
   findAll(
-    @Param('featureId') featureId: string,
+    @Param('projectId') projectId: string,
     @Query() query: FindAllTicketsQuery,
     @GetUser('id') userId: string,
   ) {
-    return this.ticketService.findAll(featureId, query, userId);
+    return this.ticketService.findAll(projectId, query, userId);
   }
 
   @Patch('')
@@ -76,7 +75,6 @@ export class TicketController {
   remove(
     @Param('id') id: string,
     @Param('projectId') projectId: string,
-
     @GetUser('id') userid: string,
   ) {
     return this.ticketService.remove(id, projectId, userid);

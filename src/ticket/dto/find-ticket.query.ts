@@ -9,8 +9,4 @@ export class FindAllTicketsQuery extends UpdateTicketDto {
   @IsOptional()
   @IsString()
   projectId?: string;
-
-  @IsOptional()
-  @IsString()
-  featureId?: string;
 }

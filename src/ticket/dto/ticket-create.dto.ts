@@ -39,4 +39,8 @@ export class CreateTicketDto {
   @IsOptional()
   @IsDateString()
   dueAt?: string;
+
+  @IsString()
+  @IsOptional()
+  featureId?: string;
 }

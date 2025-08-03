@@ -90,6 +90,12 @@ export class TicketService {
           OR: [{ ownerId: userId }, { members: { some: { userId: userId } } }],
         },
       },
+      include: {
+        feature: true,
+        creator: { include: { profile: true } },
+        assignedContributor: { include: { profile: true } },
+        verifiedBy: { include: { profile: true } },
+      },
     });
   }
 

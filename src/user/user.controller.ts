@@ -14,7 +14,7 @@ import { UserService } from './user.service';
 import { EditProfileDto, InputPasswordDto } from './dto';
 import { Public, Roles } from '../common/decorator';
 import { JwtAuthGuard, RolesGuard } from '../common/guard';
-import { Role } from '../common/dto';
+import { Role } from '../common/types';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('User')

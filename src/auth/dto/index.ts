@@ -1,4 +1,4 @@
-export * from './auth.dto';
+export * from './login.dto';
 export * from './register.dto';
 export * from './token-payload.dto';
 export * from './password-forgot.dto';

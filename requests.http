@@ -1,1 +1,492 @@
-/user/{username}
+# Bug2Progress API Test File
+# Use with VS Code REST Client extension or similar tools
+# Base URL
+@baseUrl = http://localhost:8080/api/v1
+@token = {{login.response.body.data.token}}
+
+### Variables
+@userId =
+@projectId =
+@featureId =
+@ticketId =
+@postId =
+@orgId =
+
+#######################################
+# AUTHENTICATION
+#######################################
+
+### Register User
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "password123",
+  "name": "Test User",
+  "username": "testuser",
+  "bio": "Test account for API testing",
+  "country": "USA"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+
+### Login as Admin
+# @name adminLogin
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Forgot Password
+POST {{baseUrl}}/forgot-password
+Content-Type: application/json
+Host: localhost:8080
+
+{
+  "email": "john@example.com"
+}
+
+### Change Password
+POST {{baseUrl}}/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "oldPassword": "password123",
+  "newPassword": "newpassword123"
+}
+
+#######################################
+# USER MANAGEMENT
+#######################################
+
+### Get My Profile
+GET {{baseUrl}}/user/me
+Authorization: Bearer {{token}}
+
+### Update My Profile
+PATCH {{baseUrl}}/user/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "John Updated",
+  "bio": "Updated bio text",
+  "country": "United States"
+}
+
+### View Public Profile
+GET {{baseUrl}}/user/johndoe
+
+### Get All Users (Admin Only)
+GET {{baseUrl}}/user
+Authorization: Bearer {{login.response.body.data.token}}
+
+### Deactivate My Account
+POST {{baseUrl}}/user/me/deactivate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password": "password123"
+}
+
+#######################################
+# ORGANIZATIONS
+#######################################
+
+### Create Organization
+POST {{baseUrl}}/organization
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Organization",
+  "description": "A test organization for API testing",
+  "urlid": "testorg"
+}
+
+### Get All Organizations
+GET {{baseUrl}}/organization
+
+### Get Organization Details
+GET {{baseUrl}}/organization/techcorp
+
+### Update Organization
+PATCH {{baseUrl}}/organization/techcorp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TechCorp Solutions Updated",
+  "description": "Updated description for TechCorp"
+}
+
+### Join Organization
+POST {{baseUrl}}/organization/techcorp/members
+Authorization: Bearer {{token}}
+
+### Get Organization Members
+GET {{baseUrl}}/organization/techcorp/members
+Authorization: Bearer {{token}}
+
+### Get Organization Members by Role
+GET {{baseUrl}}/organization/techcorp/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "ADMIN"
+}
+
+### Change Member Role
+PATCH {{baseUrl}}/organization/techcorp/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "testuser",
+  "role": "MODERATOR"
+}
+
+### Remove Member
+DELETE {{baseUrl}}/organization/techcorp/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "testuser"
+}
+
+### Get Organization Posts
+GET {{baseUrl}}/organization/techcorp/posts
+Authorization: Bearer {{token}}
+
+### Get Organization Projects
+GET {{baseUrl}}/organization/techcorp/projects
+Authorization: Bearer {{token}}
+
+#######################################
+# PROJECTS
+#######################################
+
+### Create Project
+POST {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Test Project",
+  "summary": "A test project created via API",
+  "urlid": "test-project",
+  "organizationId": "{{orgId}}",
+  "isPublic": true,
+  "status": "IN_DEVELOPMENT",
+  "postContent": "This is a test project created for API testing purposes."
+}
+
+### Get All My Projects
+GET {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+
+### Get Project Details
+GET {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### Update Project
+PATCH {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Test Project",
+  "summary": "Updated summary for test project",
+  "status": "ACTIVE"
+}
+
+### Delete Project
+DELETE {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### Get Project Contributors
+GET {{baseUrl}}/projects/{{projectId}}/contributors
+Authorization: Bearer {{token}}
+
+### Get Contributors by Role
+GET {{baseUrl}}/projects/{{projectId}}/contributors?role=DEVELOPER
+Authorization: Bearer {{token}}
+
+### Add Contributor
+POST {{baseUrl}}/projects/{{projectId}}/contributors
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "role": "DEVELOPER"
+}
+
+### Update Contributor Role
+PATCH {{baseUrl}}/projects/{{projectId}}/contributors
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "role": "LEAD"
+}
+
+### Remove Contributor
+DELETE {{baseUrl}}/projects/{{projectId}}/contributors/{{userId}}
+Authorization: Bearer {{token}}
+
+### Join Project via Invite Code
+POST {{baseUrl}}/projects/INVITE_CODE_HERE/join
+Authorization: Bearer {{token}}
+
+#######################################
+# FEATURES
+#######################################
+
+### Create Feature
+POST {{baseUrl}}/projects/{{projectId}}/features
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Test Feature",
+  "description": "A test feature created via API",
+  "process": "1. Design feature\n2. Implement feature\n3. Test feature\n4. Deploy feature",
+  "isPublic": true,
+  "featureType": "ACTIVE"
+}
+
+### Get All Project Features
+GET {{baseUrl}}/projects/{{projectId}}/features
+Authorization: Bearer {{token}}
+
+### Get Feature Details
+GET {{baseUrl}}/projects/{{projectId}}/features/{{featureId}}
+Authorization: Bearer {{token}}
+
+### Update Feature
+PATCH {{baseUrl}}/projects/{{projectId}}/features/{{featureId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Test Feature",
+  "description": "Updated description for test feature",
+  "featureType": "MAINTAINED"
+}
+
+### Delete Feature
+DELETE {{baseUrl}}/projects/{{projectId}}/features/{{featureId}}
+Authorization: Bearer {{token}}
+
+#######################################
+# TICKETS
+#######################################
+
+### Create Ticket
+POST {{baseUrl}}/projects/{{projectId}}/tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Test Ticket",
+  "description": "A test ticket created via API",
+  "ticketType": "FEATURE",
+  "ticketPriority": "MEDIUM",
+  "ticketStatus": "TODO",
+  "position": 1,
+  "featureId": "{{featureId}}",
+  "dueAt": "2024-03-31T23:59:59Z"
+}
+
+### Get All Project Tickets
+GET {{baseUrl}}/projects/{{projectId}}/tickets
+Authorization: Bearer {{token}}
+
+### Get Tickets with Filters
+GET {{baseUrl}}/projects/{{projectId}}/tickets?ticketStatus=TODO&ticketPriority=HIGH
+Authorization: Bearer {{token}}
+
+### Get Ticket Details
+GET {{baseUrl}}/projects/{{projectId}}/tickets/{{ticketId}}
+Authorization: Bearer {{token}}
+
+### Update Ticket
+PATCH {{baseUrl}}/projects/{{projectId}}/tickets/{{ticketId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Test Ticket",
+  "description": "Updated description for test ticket",
+  "ticketStatus": "IN_PROGRESS",
+  "ticketPriority": "HIGH",
+  "assignedContributorId": "{{userId}}"
+}
+
+### Update Ticket Positions
+PATCH {{baseUrl}}/projects/{{projectId}}/tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tickets": [
+    {"id": "ticket-id-1", "position": 1},
+    {"id": "ticket-id-2", "position": 2}
+  ]
+}
+
+### Delete Ticket
+DELETE {{baseUrl}}/projects/{{projectId}}/tickets/{{ticketId}}
+Authorization: Bearer {{token}}
+
+#######################################
+# POSTS
+#######################################
+
+### Create Post
+POST {{baseUrl}}/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Test Blog Post",
+  "summary": "A test blog post created via API",
+  "slug": "test-blog-post",
+  "postContent": "This is the full content of the test blog post. It contains detailed information about the topic being discussed.",
+  "attachmentFiles": ["image1.jpg", "document.pdf"],
+  "organizationId": "{{orgId}}",
+  "isPublic": true,
+  "published": true
+}
+
+### Get All Posts
+GET {{baseUrl}}/posts
+Authorization: Bearer {{token}}
+
+### Get Posts by User
+GET {{baseUrl}}/posts?user=johndoe
+Authorization: Bearer {{token}}
+
+### Get Post Details
+GET {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+
+### Update Post
+PATCH {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Test Blog Post",
+  "summary": "Updated summary for test blog post",
+  "published": true
+}
+
+### Delete Post
+DELETE {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+
+#######################################
+# POST COMMENTS
+#######################################
+
+### Add Comment to Post
+POST {{baseUrl}}/post/comment/{{postId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "text": "Great post! Thanks for sharing this information."
+}
+
+### Get All Post Comments
+GET {{baseUrl}}/post/comment/{{postId}}
+Authorization: Bearer {{token}}
+
+### Get Comment Details
+GET {{baseUrl}}/post/comment/{{postId}}/COMMENT_ID
+Authorization: Bearer {{token}}
+
+### Update Comment
+PATCH {{baseUrl}}/post/comment/{{postId}}/COMMENT_ID
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "text": "Updated comment text with more details."
+}
+
+### Delete Comment
+DELETE {{baseUrl}}/post/comment/{{postId}}/COMMENT_ID
+Authorization: Bearer {{token}}
+
+#######################################
+# ERROR TESTING
+#######################################
+
+### Test Unauthorized Access
+GET {{baseUrl}}/user/me
+
+### Test Invalid Token
+GET {{baseUrl}}/user/me
+Authorization: Bearer invalid-token
+
+### Test Validation Error
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": ""
+}
+
+### Test Not Found
+GET {{baseUrl}}/projects/nonexistent-id
+Authorization: Bearer {{token}}
+
+### Test Rate Limiting (run multiple times quickly)
+GET {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+
+#######################################
+# ROLE-BASED ACCESS TESTING
+#######################################
+
+### Test Admin Endpoint (requires admin token)
+GET {{baseUrl}}/user
+Authorization: Bearer {{adminLogin.response.body.data.token}}
+
+### Test Admin Endpoint with Regular User (should fail)
+GET {{baseUrl}}/user
+Authorization: Bearer {{token}}
+
+#######################################
+# CLEANUP ENDPOINTS
+#######################################
+
+### Delete Test User Account
+POST {{baseUrl}}/user/me/delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password": "password123"
+}

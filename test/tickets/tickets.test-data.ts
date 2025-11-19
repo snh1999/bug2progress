@@ -1,8 +1,8 @@
-import { faker } from '@faker-js/faker/.';
 import request from 'supertest';
 import { THttpServer } from '../utils/types';
 import { CreateTicketDto } from '@/ticket/dto';
 import { TicketPriority, TicketStatus, TicketType } from '@prisma/client';
+import { faker } from '@faker-js/faker/locale/en';
 
 export const getCreateTicketMockDto = (): CreateTicketDto => ({
   title: faker.lorem.sentence(),

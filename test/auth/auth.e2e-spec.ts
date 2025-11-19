@@ -6,10 +6,10 @@ import { getRegisterDto } from './auth.test-data';
 import { getLoginExpectedStructure } from './auth.expected-structure';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RegisterDto } from '@/auth/dto';
-import { faker } from '@faker-js/faker/.';
 import { EmailService } from '@/auth/email.service';
 import { createTestUser } from '../users/users.test-helpers';
 import { EMAIL_SEND_SUCCESS_MESSAGE } from '@/auth/auth.constants';
+import { faker } from '@faker-js/faker/locale/en';
 
 describe('Auth e2e', () => {
   let app: INestApplication;

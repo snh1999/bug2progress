@@ -1,7 +1,7 @@
-import { faker } from '@faker-js/faker/.';
 import { CreateFeatureDto } from '@/feature/dto';
 import request from 'supertest';
 import { THttpServer } from '../utils/types';
+import { faker } from '@faker-js/faker/locale/en';
 
 export const getCreateFeatureMockDto = (): CreateFeatureDto => ({
   title: faker.lorem.sentence(),

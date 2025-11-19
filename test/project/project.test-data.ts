@@ -1,8 +1,9 @@
 import { CreateProjectDto } from '@/project/dto';
-import { faker } from '@faker-js/faker/.';
 import { ProjectStatus } from '@prisma/client';
 import request from 'supertest';
 import { THttpServer } from '../utils/types';
+import { faker } from '@faker-js/faker/locale/en';
+
 export const getCreateProjectMockDto = (): CreateProjectDto => ({
   title: faker.lorem.sentence(),
   summary: faker.lorem.sentence(),

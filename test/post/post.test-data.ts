@@ -1,7 +1,7 @@
-import { faker } from '@faker-js/faker/.';
 import request from 'supertest';
 import { THttpServer } from '../utils/types';
 import { CreatePostDto, UpdatePostDto } from '@/post/dto';
+import { faker } from '@faker-js/faker/locale/en';
 
 export const getCreatePostMockDto = (): CreatePostDto => ({
   title: faker.lorem.words(3),

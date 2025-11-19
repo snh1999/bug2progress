@@ -12,12 +12,13 @@ import { PostCommentModule } from './post-comment/post-comment.module';
 import { TicketCommentModule } from './ticket-comment/ticket-comment.module';
 import { FeatureModule } from './feature/feature.module';
 import { AllExceptionsFilter } from './common/interceptor/exceptions.filter';
+import { validate } from './common/config/env.validation';
 
 @Module({
   imports: [
     AuthModule,
     PrismaModule,
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env', validate }),
     UserModule,
     OrganizationModule,
     PostModule,

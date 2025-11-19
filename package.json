@@ -8,6 +8,8 @@
   "scripts": {
     "db:dev-deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
     "db:dev:rm": "docker compose rm db -s -f -v",
     "db:dev:up": "docker compose up db -d",
     "db:dev:reset": "bun db:dev:rm && bun db:dev:up && sleep 1 && prisma:dev-deploy",

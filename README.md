@@ -6,11 +6,11 @@ The repository for [frontend](https://github.com/snh1999/bug2progress-frontend).
 
 ### 🚀 Getting Started
 
-1. Node.js (v20+), Docker and Docker Compose (for database/PostgreSQL) and [`pnpm`](https://pnpm.io/installation), [`prisma`](https://www.prisma.io/docs/getting-started/quickstart) is required to run this project. Make sure there is [`node.js`](https://nodejs.org/en) and [`docker`](https://docs.docker.com/desktop/) is installed beforehand.
+1. Node.js (v20+), Docker and Docker Compose (for database/PostgreSQL) and [`bun`](https://bun.com/docs/installation), [`prisma`](https://www.prisma.io/docs/getting-started/quickstart) is required to run this project. Make sure there is [`node.js`](https://nodejs.org/en) and [`docker`](https://docs.docker.com/desktop/) is installed beforehand.
 
 ```bash
-# to install pnpm
-npm install -g pnpm
+# to install bun
+curl -fsSL https://bun.com/install | bash
 ```
 
 2. Clone the repository.
@@ -18,30 +18,32 @@ npm install -g pnpm
 ```bash
 git clone https://github.com/snh1999/bug2progress
 cd bug2progress
-pnpm install
+bun install
 ```
 
 3. Docker compose to manage database. [Note- make sure you check the `docker-compose.yml`]
 
 ```bash
 docker compose up db -d
+# or with podman
+podman-compose up db -d
 ```
 
-4. Setup the environment variables, there is a sample `.env.sample` file provided.
+4. Setup the environment variables(`.env` for application and `.env.test` for tests), there is a sample `.env.sample` file provided.
 
 5. Database Setup(make sure the database is running)
 
 ```bash
 # Generate Prisma client
-npx prisma generate
+npx db:generate
 # Run migrations
-npx prisma migrate dev
+npx db:migrate
 ```
 
 5. finally run the server
 
 ```bash
-pnpm run start:dev
+bun start:dev
 ```
 
 6. The API will be available at http://localhost:8080/api/v1 (you can change the port in the `main.ts` file)
@@ -51,27 +53,27 @@ pnpm run start:dev
 
 ```bash
 # Development
-pnpm run start:debug      # Start in debug mode
-pnpm run start:prod       # Start production build
+bun start:debug      # Start in debug mode
+bun start:prod       # Start production build
 
 # Building
-pnpm run build            # Build the application
-pnpm run start            # Start built application
+bun build            # Build the application
+bun start            # Start built application
 
 # Database
-pnpm run db:dev-deploy   # Deploy migrations to dev database
-pnpm run db:test-deploy  # Deploy migrations to test database
-pnpm run db:seed         # Seed database
-npx prisma generate      # Generate Prisma client
-npx prisma migrate dev   # Apply migrations
+bun db:dev-deploy   # Deploy migrations to dev database
+bun db:test-deploy  # Deploy migrations to test database
+bun db:seed         # Seed database
+bun db:generate      # Generate Prisma client
+bun db:migrate   # Apply migrations
 
 
 # Testing
-npm run test:e2e         # Run end-to-end tests
+bun test:e2e         # Run end-to-end tests
 
 # Code Quality
-npm run lint             # Run ESLint
-npm run format           # Format code with Prettier
+bun lint             # Run ESLint
+bun format           # Format code with Prettier
 ```
 
 #### 🏗️ Entity Relationship Diagram and Architecture Overview

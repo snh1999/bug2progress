@@ -13,12 +13,13 @@ import { TicketCommentModule } from './ticket-comment/ticket-comment.module';
 import { FeatureModule } from './feature/feature.module';
 import { AllExceptionsFilter } from './common/interceptor/exceptions.filter';
 import { validate } from './common/config/env.validation';
+import { WebsocketModule } from './socket/websocket.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     AuthModule,
     PrismaModule,
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env', validate }),
     UserModule,
     OrganizationModule,
     PostModule,
@@ -27,6 +28,9 @@ import { validate } from './common/config/env.validation';
     PostCommentModule,
     TicketCommentModule,
     FeatureModule,
+    WebsocketModule,
+    EventEmitterModule.forRoot({ wildcard: true, delimiter: '.' }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env', validate }),
   ],
   providers: [
     {

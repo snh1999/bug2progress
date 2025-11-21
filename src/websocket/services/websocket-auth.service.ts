@@ -18,6 +18,7 @@ export class SocketAuthService {
     const token = this.extractToken(client);
     const payload = await this.verifyToken(token);
     client.user = payload;
+    client.projectId = String(client.handshake.query.projectId);
     this.logger.log(`User ${payload.id} authenticated via WebSocket`);
   }
 

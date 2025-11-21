@@ -13,7 +13,7 @@ import { TicketCommentModule } from './ticket-comment/ticket-comment.module';
 import { FeatureModule } from './feature/feature.module';
 import { AllExceptionsFilter } from './common/interceptor/exceptions.filter';
 import { validate } from './common/config/env.validation';
-import { WebsocketModule } from './socket/websocket.module';
+import { WebsocketModule } from './websocket/websocket.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({

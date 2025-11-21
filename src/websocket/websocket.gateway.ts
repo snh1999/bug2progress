@@ -8,8 +8,11 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { SocketAuthService } from './services/websocket-auth.service';
-import { JwtWsGuard } from './guard/jwt-ws.guard';
-import { AuthenticatedSocket } from './websocket.types';
+import { JwtWsGuard } from './services/guard/jwt-ws.guard';
+import { AuthenticatedSocket, TTicketCreationPayload } from './websocket.types';
+import { OnEvent } from '@nestjs/event-emitter';
+import { TICKET_CREATION_EVENT } from './events.constant';
+import { WebsocketService } from './services/websocket.service';
 
 @WebSocketGateway({
   cors: {
@@ -25,7 +28,10 @@ export class WebsocketGateway
   @WebSocketServer()
   server!: Server;
 
-  constructor(private socketAuthService: SocketAuthService) {}
+  constructor(
+    private socketAuthService: SocketAuthService,
+    private socketService: WebsocketService,
+  ) {}
   private logger = new Logger(WebsocketGateway.name);
 
   afterInit(server: Server) {
@@ -47,10 +53,15 @@ export class WebsocketGateway
   }
 
   async handleConnection(client: AuthenticatedSocket) {
-    this.logger.log(`Connected: ${client.id} | User: ${client.user.id}`);
+    this.socketService.handleConnection(client);
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
     this.logger.log(`Disconnected: ${client.id} | User: ${client.user.id}`);
+  }
+
+  @OnEvent(TICKET_CREATION_EVENT)
+  handleTicketCreation(payload: TTicketCreationPayload) {
+    this.socketService.handleTicketCreation(payload, this.server);
   }
 }

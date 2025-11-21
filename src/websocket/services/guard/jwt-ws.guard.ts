@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
-import { SocketAuthService } from '../services/websocket-auth.service';
+import { SocketAuthService } from '../websocket-auth.service';
 
 @Injectable()
 export class JwtWsGuard implements CanActivate {

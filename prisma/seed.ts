@@ -15,7 +15,7 @@ import * as argon from 'argon2';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('Starting database seed...');
 
   // Clear existing data (in reverse dependency order)
   await prisma.ticketComment.deleteMany();

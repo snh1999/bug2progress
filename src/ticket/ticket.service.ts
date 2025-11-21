@@ -8,6 +8,8 @@ import {
 } from './dto';
 import { FeatureService } from '@/feature/feature.service';
 import { FindAllTicketsQuery } from './dto/find-ticket.query';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TICKET_CREATION_EVENT } from '@/websocket/events.constant';
 
 @Injectable()
 export class TicketService {
@@ -15,6 +17,7 @@ export class TicketService {
     private prisma: PrismaService,
     private projectService: ProjectService,
     private featureService: FeatureService,
+    private eventEmitter: EventEmitter2,
   ) {}
   async create(dto: CreateTicketDto, projectId: string, userId: string) {
     if (dto.featureId)
@@ -27,6 +30,12 @@ export class TicketService {
         projectId,
         creatorId: userId,
       },
+    });
+
+    this.eventEmitter.emit(TICKET_CREATION_EVENT, {
+      projectId,
+      creatorId: userId,
+      ticket: ticket,
     });
 
     return ticket;

@@ -9,9 +9,20 @@ import {
 import { Server } from 'socket.io';
 import { SocketAuthService } from './services/websocket-auth.service';
 import { JwtWsGuard } from './services/guard/jwt-ws.guard';
-import { AuthenticatedSocket, TTicketCreationPayload } from './websocket.types';
+import {
+  AuthenticatedSocket,
+  TTicketCreationPayload,
+  TTicketDeletionPayload,
+  TTicketRearrangementPayload,
+  TTicketUpdatePayload,
+} from './websocket.types';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TICKET_CREATION_EVENT } from './events.constant';
+import {
+  TICKET_REARRANGEMENT_EVENT,
+  TICKET_CREATION_EVENT,
+  TICKET_UPDATE_EVENT,
+  TICKET_DELETION_EVENT,
+} from './events.constant';
 import { WebsocketService } from './services/websocket.service';
 
 @WebSocketGateway({
@@ -62,6 +73,37 @@ export class WebsocketGateway
 
   @OnEvent(TICKET_CREATION_EVENT)
   handleTicketCreation(payload: TTicketCreationPayload) {
-    this.socketService.handleTicketCreation(payload, this.server);
+    this.socketService.handleTicketEvent({
+      payload,
+      server: this.server,
+      event: TICKET_CREATION_EVENT,
+    });
+  }
+
+  @OnEvent(TICKET_UPDATE_EVENT)
+  handleTicketUpdate(payload: TTicketUpdatePayload) {
+    this.socketService.handleTicketEvent({
+      payload,
+      server: this.server,
+      event: TICKET_UPDATE_EVENT,
+    });
+  }
+
+  @OnEvent(TICKET_DELETION_EVENT)
+  handleTicketDelete(payload: TTicketDeletionPayload) {
+    this.socketService.handleTicketEvent({
+      payload,
+      server: this.server,
+      event: TICKET_DELETION_EVENT,
+    });
+  }
+
+  @OnEvent(TICKET_REARRANGEMENT_EVENT)
+  handleTicketRearrangement(payload: TTicketRearrangementPayload) {
+    this.socketService.handleTicketEvent({
+      payload,
+      server: this.server,
+      event: TICKET_REARRANGEMENT_EVENT,
+    });
   }
 }

@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Server } from 'socket.io';
-import {
-  AuthenticatedSocket,
-  TTicketCreationPayload,
-} from '../websocket.types';
-import { TICKET_CREATION_EVENT, USER_DISCONNECTED } from '../events.constant';
+import { AuthenticatedSocket, TTicketEvent } from '../websocket.types';
+import { USER_DISCONNECTED } from '../events.constant';
 
 @Injectable()
 export class WebsocketService {
@@ -25,20 +21,20 @@ export class WebsocketService {
     this.logger.log(`User ${user.id} joined project ${projectId}`);
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+  handleDisconnect(socket: AuthenticatedSocket) {
+    this.logger.log(`Client disconnected: ${socket.id}`);
 
-    if (client.projectId) {
-      client.to(this.getRoomId(client.projectId)).emit(USER_DISCONNECTED, {
-        userId: client.user.id,
+    if (socket.projectId) {
+      socket.to(this.getRoomId(socket.projectId)).emit(USER_DISCONNECTED, {
+        userId: socket.user.id,
         timestamp: new Date(),
       });
     }
   }
 
-  handleTicketCreation(payload: TTicketCreationPayload, server: Server) {
-    server.to(this.getRoomId(payload.projectId)).emit(TICKET_CREATION_EVENT, {
-      project: payload.projectId,
+  handleTicketEvent({ server, event, payload }: TTicketEvent) {
+    server.to(this.getRoomId(payload.projectId)).emit(event, {
+      ...payload,
       timestamp: new Date(),
     });
   }

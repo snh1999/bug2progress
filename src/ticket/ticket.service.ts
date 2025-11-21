@@ -9,7 +9,12 @@ import {
 import { FeatureService } from '@/feature/feature.service';
 import { FindAllTicketsQuery } from './dto/find-ticket.query';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TICKET_CREATION_EVENT } from '@/websocket/events.constant';
+import {
+  TICKET_REARRANGEMENT_EVENT,
+  TICKET_CREATION_EVENT,
+  TICKET_UPDATE_EVENT,
+  TICKET_DELETION_EVENT,
+} from '@/websocket/events.constant';
 
 @Injectable()
 export class TicketService {
@@ -111,13 +116,13 @@ export class TicketService {
   async updateArrangement(
     projectId: string,
     dto: UpdateTicketPositionDto,
-    userid: string,
+    userId: string,
   ) {
-    await this.checkPermission(projectId, userid);
+    await this.checkPermission(projectId, userId);
 
     const { data } = dto;
 
-    return this.prisma.$transaction(async (prisma) => {
+    const updatedTickets = await this.prisma.$transaction(async (prisma) => {
       const updates = data.map(({ id, ...rest }) =>
         prisma.ticket.update({
           where: { id },
@@ -127,16 +132,24 @@ export class TicketService {
 
       return Promise.all(updates);
     });
+
+    this.eventEmitter.emit(TICKET_REARRANGEMENT_EVENT, {
+      projectId,
+      tickets: updatedTickets,
+      movedBy: userId,
+    });
+
+    return updatedTickets;
   }
 
   async update(
     id: string,
     projectId: string,
     dto: UpdateTicketDto,
-    userid: string,
+    userId: string,
   ) {
-    await this.checkPermission(projectId, userid);
-    return this.prisma.ticket.update({
+    await this.checkPermission(projectId, userId);
+    const updatedTicket = this.prisma.ticket.update({
       where: {
         id,
       },
@@ -144,16 +157,31 @@ export class TicketService {
         ...dto,
       },
     });
+
+    this.eventEmitter.emit(TICKET_UPDATE_EVENT, {
+      projectId,
+      updatedBy: userId,
+      ticket: updatedTicket,
+    });
+
+    return updatedTicket;
   }
 
-  async remove(id: string, projectId: string, userid: string) {
-    await this.checkPermission(projectId, userid);
+  async remove(id: string, projectId: string, userId: string) {
+    await this.checkPermission(projectId, userId);
     await this.prisma.ticket.delete({
       where: {
         id,
-        creatorId: userid,
+        creatorId: userId,
       },
     });
+
+    this.eventEmitter.emit(TICKET_DELETION_EVENT, {
+      projectId,
+      deletedBy: userId,
+      ticketId: id,
+    });
+
     return {
       message: 'delete successful',
     };

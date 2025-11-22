@@ -149,7 +149,7 @@ export class TicketService {
     userId: string,
   ) {
     await this.checkPermission(projectId, userId);
-    const updatedTicket = this.prisma.ticket.update({
+    const updatedTicket = await this.prisma.ticket.update({
       where: {
         id,
       },

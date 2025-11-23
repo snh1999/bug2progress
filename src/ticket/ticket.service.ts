@@ -39,7 +39,7 @@ export class TicketService {
 
     this.eventEmitter.emit(TICKET_CREATION_EVENT, {
       projectId,
-      creatorId: userId,
+      createdBy: userId,
       ticket: ticket,
     });
 

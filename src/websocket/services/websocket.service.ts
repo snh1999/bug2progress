@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { AuthenticatedSocket, TTicketEvent } from '../websocket.types';
+import { AuthenticatedSocket, TEventTrigger } from '../websocket.types';
 import { USER_DISCONNECTED } from '../events.constant';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class WebsocketService {
     }
   }
 
-  handleTicketEvent({ server, event, payload }: TTicketEvent) {
+  handleEventTrigger({ server, event, payload }: TEventTrigger) {
     server.to(this.getRoomId(payload.projectId)).emit(event, {
       ...payload,
       timestamp: new Date(),

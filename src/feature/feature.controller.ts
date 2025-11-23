@@ -53,7 +53,11 @@ export class FeatureController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @GetUser('id') userid: string) {
-    return this.featureService.remove(id, userid);
+  remove(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @GetUser('id') userid: string,
+  ) {
+    return this.featureService.remove(id, projectId, userid);
   }
 }

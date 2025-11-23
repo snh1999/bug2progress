@@ -1,4 +1,4 @@
-import { Ticket } from '@prisma/client';
+import { Features, Project, Ticket } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 export interface AuthenticatedSocket extends Socket {
   user: {
@@ -9,21 +9,30 @@ export interface AuthenticatedSocket extends Socket {
   projectId?: string;
 }
 
-export type TTicketCreationPayload = {
+type TCreationPayload = {
   projectId: string;
-  creatorId: string;
-  ticket: Ticket;
+  createdBy: string;
 };
 
-export type TTicketUpdatePayload = {
+type TUpdatePayload = {
   projectId: string;
   updatedBy: string;
+};
+
+type TDeletePayload = {
+  projectId: string;
+  deletedBy: string;
+};
+
+export type TTicketCreationPayload = TCreationPayload & {
   ticket: Ticket;
 };
 
-export type TTicketDeletionPayload = {
-  projectId: string;
-  deletedBy: string;
+export type TTicketUpdatePayload = TUpdatePayload & {
+  ticket: Ticket;
+};
+
+export type TTicketDeletionPayload = TDeletePayload & {
   ticketId: string;
 };
 
@@ -33,8 +42,26 @@ export type TTicketRearrangementPayload = {
   tickets: Ticket[];
 };
 
-export type TTicketEvent = {
+export type TEventTrigger = {
   payload: Record<string, any> & { projectId: string };
   server: Server;
   event: string;
 };
+
+export type TFeatureCreationPayload = TCreationPayload & {
+  feature: Features;
+};
+
+export type TFeatureDeletionPayload = TCreationPayload & {
+  featureId: string;
+};
+
+export type TFeatureUpdatePayload = TUpdatePayload & {
+  feature: Features;
+};
+
+export type TProjectUpdatePayload = TUpdatePayload & {
+  project: Project;
+};
+
+export type TProjectDeletionPayload = TDeletePayload;

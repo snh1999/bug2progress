@@ -11,6 +11,11 @@ import { SocketAuthService } from './services/websocket-auth.service';
 import { JwtWsGuard } from './services/guard/jwt-ws.guard';
 import {
   AuthenticatedSocket,
+  TFeatureCreationPayload,
+  TFeatureDeletionPayload,
+  TFeatureUpdatePayload,
+  TProjectDeletionPayload,
+  TProjectUpdatePayload,
   TTicketCreationPayload,
   TTicketDeletionPayload,
   TTicketRearrangementPayload,
@@ -22,6 +27,11 @@ import {
   TICKET_CREATION_EVENT,
   TICKET_UPDATE_EVENT,
   TICKET_DELETION_EVENT,
+  FEATURE_CREATION_EVENT,
+  FEATURE_DELETION_EVENT,
+  FEATURE_UPDATE_EVENT,
+  PROJECT_UPDATE_EVENT,
+  PROJECT_DELETION_EVENT,
 } from './events.constant';
 import { WebsocketService } from './services/websocket.service';
 
@@ -73,7 +83,7 @@ export class WebsocketGateway
 
   @OnEvent(TICKET_CREATION_EVENT)
   handleTicketCreation(payload: TTicketCreationPayload) {
-    this.socketService.handleTicketEvent({
+    this.socketService.handleEventTrigger({
       payload,
       server: this.server,
       event: TICKET_CREATION_EVENT,
@@ -82,7 +92,7 @@ export class WebsocketGateway
 
   @OnEvent(TICKET_UPDATE_EVENT)
   handleTicketUpdate(payload: TTicketUpdatePayload) {
-    this.socketService.handleTicketEvent({
+    this.socketService.handleEventTrigger({
       payload,
       server: this.server,
       event: TICKET_UPDATE_EVENT,
@@ -91,7 +101,7 @@ export class WebsocketGateway
 
   @OnEvent(TICKET_DELETION_EVENT)
   handleTicketDelete(payload: TTicketDeletionPayload) {
-    this.socketService.handleTicketEvent({
+    this.socketService.handleEventTrigger({
       payload,
       server: this.server,
       event: TICKET_DELETION_EVENT,
@@ -100,10 +110,55 @@ export class WebsocketGateway
 
   @OnEvent(TICKET_REARRANGEMENT_EVENT)
   handleTicketRearrangement(payload: TTicketRearrangementPayload) {
-    this.socketService.handleTicketEvent({
+    this.socketService.handleEventTrigger({
       payload,
       server: this.server,
       event: TICKET_REARRANGEMENT_EVENT,
+    });
+  }
+
+  @OnEvent(FEATURE_CREATION_EVENT)
+  handleFeatureCreation(payload: TFeatureCreationPayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: FEATURE_CREATION_EVENT,
+    });
+  }
+
+  @OnEvent(FEATURE_DELETION_EVENT)
+  handleFeatureDeletion(payload: TFeatureDeletionPayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: FEATURE_DELETION_EVENT,
+    });
+  }
+
+  @OnEvent(FEATURE_UPDATE_EVENT)
+  handleFeatureUpdate(payload: TFeatureUpdatePayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: FEATURE_UPDATE_EVENT,
+    });
+  }
+
+  @OnEvent(PROJECT_UPDATE_EVENT)
+  handleProjectUpdate(payload: TProjectUpdatePayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: PROJECT_UPDATE_EVENT,
+    });
+  }
+
+  @OnEvent(PROJECT_DELETION_EVENT)
+  handleProjectDeletion(payload: TProjectDeletionPayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: PROJECT_DELETION_EVENT,
     });
   }
 }

@@ -9,6 +9,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
 import { generateRandomString } from '@/utils/hashedString';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  PROJECT_DELETION_EVENT,
+  PROJECT_UPDATE_EVENT,
+} from '@/websocket/events.constant';
 
 @Injectable()
 export class ProjectService {
@@ -16,6 +21,7 @@ export class ProjectService {
     private prisma: PrismaService,
     private postService: PostService,
     private userService: UserService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: CreateProjectDto, userId: string) {
@@ -87,13 +93,21 @@ export class ProjectService {
         await this.postService.update(id, { postContent }, userId);
       }
 
-    return this.prisma.project.update({
+    const updatedProject = await this.prisma.project.update({
       where: { id, ownerId: userId },
       data: {
         ...projectData,
         inviteCode: updateInviteCode ? await generateRandomString() : undefined,
       },
     });
+
+    this.eventEmitter.emit(PROJECT_UPDATE_EVENT, {
+      projectId: id,
+      updatedBy: userId,
+      project: updatedProject,
+    });
+
+    return updatedProject;
   }
 
   async remove(id: string, userId: string) {
@@ -107,6 +121,11 @@ export class ProjectService {
         where: { id: project.basePostId },
       }),
     ]);
+
+    this.eventEmitter.emit(PROJECT_DELETION_EVENT, {
+      projectId: id,
+      deletedBy: userId,
+    });
 
     return {
       message: 'delete successful',

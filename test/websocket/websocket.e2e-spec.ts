@@ -8,6 +8,11 @@ import { createTestProject } from '../project/project.test-data';
 import { createTestTicket } from '../tickets/tickets.test-data';
 import { THttpServer } from '../utils/types';
 import {
+  FEATURE_CREATION_EVENT,
+  FEATURE_DELETION_EVENT,
+  FEATURE_UPDATE_EVENT,
+  PROJECT_DELETION_EVENT,
+  PROJECT_UPDATE_EVENT,
   TICKET_CREATION_EVENT,
   TICKET_DELETION_EVENT,
   TICKET_REARRANGEMENT_EVENT,
@@ -16,18 +21,33 @@ import {
 import { Socket } from 'socket.io-client';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import {
+  getCreateFeaturePayloadExpectedStructure,
   getCreateTicketPayloadExpectedStructure,
+  getDeleteFeaturePayloadExpectedStructure,
+  getDeleteProjectPayloadExpectedStructure,
   getDeleteTicketPayloadExpectedStructure,
   getRearrangeTicketPayloadExpectedStructure,
+  getUpdateFeaturePayloadExpectedStructure,
+  getUpdateProjectPayloadExpectedStructure,
   getUpdateTicketPayloadExpectedStructure,
 } from './websocket.expected-structure';
-import { TTicketCreationPayload } from '@/websocket/websocket.types';
+import {
+  TFeatureCreationPayload,
+  TFeatureDeletionPayload,
+  TProjectDeletionPayload,
+  TProjectUpdatePayload,
+  TTicketCreationPayload,
+  TTicketDeletionPayload,
+  TTicketRearrangementPayload,
+  TTicketUpdatePayload,
+} from '@/websocket/websocket.types';
 import { UpdateTicketPositionDto } from '@/ticket/dto';
 import { TicketStatus } from '@prisma/client';
 import {
   INVALID_TOKEN_MESSAGE,
   NO_TOKEN_MESSAGE,
 } from '@/websocket/websocket.constant';
+import { createTestFeature } from '../feature/feature.test-data';
 
 describe('Websocket e2e', () => {
   let app: INestApplication;
@@ -56,8 +76,6 @@ describe('Websocket e2e', () => {
 
     user1Token = await getAccessToken(httpServerInstance);
     user2Token = await getAccessToken(httpServerInstance);
-
-    project = await createTestProject(httpServerInstance, user1Token);
   });
 
   afterAll(async () => {
@@ -66,6 +84,7 @@ describe('Websocket e2e', () => {
   });
 
   beforeEach(async () => {
+    project = await createTestProject(httpServer, user1Token);
     try {
       user1Socket = await connectSocket({
         baseUrl,
@@ -118,6 +137,118 @@ describe('Websocket e2e', () => {
       ));
   });
 
+  describe('Project Events', () => {
+    it('should trigger event as resoponse of project update', async () => {
+      const projectUpdatePromise = waitForSocketEvent(
+        user2Socket,
+        PROJECT_UPDATE_EVENT,
+      );
+
+      const updateProjectDto = {
+        title: 'Updated Project Title',
+        summary: 'Updated Project summary',
+      };
+
+      await request(httpServer)
+        .patch(`/projects/${project.id}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send(updateProjectDto);
+
+      const payload = (await projectUpdatePromise) as TProjectUpdatePayload;
+      expect(payload).toEqual(getUpdateProjectPayloadExpectedStructure());
+      expect(payload.projectId).toEqual(project.id);
+      expect(payload.project.title).toEqual(updateProjectDto.title);
+      expect(payload.project.summary).toEqual(updateProjectDto.summary);
+    });
+
+    it('should trigger event as resoponse of project delete', async () => {
+      const projectDeletionPromise = waitForSocketEvent(
+        user2Socket,
+        PROJECT_DELETION_EVENT,
+      );
+
+      await request(httpServer)
+        .delete(`/projects/${project.id}`)
+        .set('Authorization', `Bearer ${user1Token}`);
+
+      const payload = (await projectDeletionPromise) as TProjectDeletionPayload;
+      expect(payload).toEqual(getDeleteProjectPayloadExpectedStructure());
+      expect(payload.projectId).toEqual(project.id);
+    });
+  });
+
+  describe('Feature Events', () => {
+    it('should trigger event as resoponse of feature creation', async () => {
+      const featureCreationPromise = waitForSocketEvent(
+        user2Socket,
+        FEATURE_CREATION_EVENT,
+      );
+
+      const feature = await createTestFeature(
+        httpServer,
+        user1Token,
+        project.id,
+      );
+
+      const payload = (await featureCreationPromise) as TFeatureCreationPayload;
+      expect(payload).toEqual(getCreateFeaturePayloadExpectedStructure());
+      expect(payload.feature.id).toEqual(feature.id);
+      expect(payload.projectId).toEqual(project.id);
+    });
+
+    it('should trigger event as resoponse of feature update', async () => {
+      const featureUpdatePromise = waitForSocketEvent(
+        user2Socket,
+        FEATURE_UPDATE_EVENT,
+      );
+
+      const feature = await createTestFeature(
+        httpServer,
+        user1Token,
+        project.id,
+      );
+
+      const updateTicketsDto = {
+        title: 'Updated Feature Title',
+        description: 'Updated Feature summary',
+      };
+
+      await request(httpServer)
+        .patch(`/projects/${project.id}/features/${feature.id}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send(updateTicketsDto);
+
+      const payload = (await featureUpdatePromise) as TFeatureCreationPayload;
+      expect(payload).toEqual(getUpdateFeaturePayloadExpectedStructure());
+      expect(payload.projectId).toEqual(project.id);
+      expect(payload.feature.id).toEqual(feature.id);
+      expect(payload.feature.title).toEqual(updateTicketsDto.title);
+      expect(payload.feature.description).toEqual(updateTicketsDto.description);
+    });
+
+    it('should trigger event as resoponse of feature delete', async () => {
+      const featureDeletionPromise = waitForSocketEvent(
+        user2Socket,
+        FEATURE_DELETION_EVENT,
+      );
+
+      const feature = await createTestFeature(
+        httpServer,
+        user1Token,
+        project.id,
+      );
+
+      await request(httpServer)
+        .delete(`/projects/${project.id}/features/${feature.id}`)
+        .set('Authorization', `Bearer ${user1Token}`);
+
+      const payload = (await featureDeletionPromise) as TFeatureDeletionPayload;
+      expect(payload).toEqual(getDeleteFeaturePayloadExpectedStructure());
+      expect(payload.projectId).toEqual(project.id);
+      expect(payload.featureId).toEqual(feature.id);
+    });
+  });
+
   describe('Ticket Events', () => {
     it('should trigger event as resoponse of ticket creation', async () => {
       const ticketCreationPromise = waitForSocketEvent(
@@ -133,7 +264,7 @@ describe('Websocket e2e', () => {
     });
 
     it('should trigger event as resoponse of ticket update', async () => {
-      const ticketCreationPromise = waitForSocketEvent(
+      const ticketUpdatePromise = waitForSocketEvent(
         user2Socket,
         TICKET_UPDATE_EVENT,
       );
@@ -141,7 +272,7 @@ describe('Websocket e2e', () => {
       const ticket = await createTestTicket(httpServer, user1Token, project.id);
 
       const updateTicketsDto = {
-        title: 'Updated Project Title',
+        title: 'Updated Ticket Title',
         description: 'Updated ticket summary',
       };
 
@@ -150,7 +281,7 @@ describe('Websocket e2e', () => {
         .set('Authorization', `Bearer ${user1Token}`)
         .send(updateTicketsDto);
 
-      const payload = (await ticketCreationPromise) as TTicketCreationPayload;
+      const payload = (await ticketUpdatePromise) as TTicketUpdatePayload;
       expect(payload).toEqual(getUpdateTicketPayloadExpectedStructure());
       expect(payload.ticket.id).toEqual(ticket.id);
       expect(payload.ticket.title).toEqual(updateTicketsDto.title);
@@ -158,7 +289,7 @@ describe('Websocket e2e', () => {
     });
 
     it('should trigger event as resoponse of ticket rearrangement', async () => {
-      const ticketCreationPromise = waitForSocketEvent(
+      const ticketRearrangementPromise = waitForSocketEvent(
         user2Socket,
         TICKET_REARRANGEMENT_EVENT,
       );
@@ -194,12 +325,14 @@ describe('Websocket e2e', () => {
         .set('Authorization', `Bearer ${user1Token}`)
         .send(updateData);
 
-      const payload = (await ticketCreationPromise) as TTicketCreationPayload;
+      const payload =
+        (await ticketRearrangementPromise) as TTicketRearrangementPayload;
       expect(payload).toEqual(getRearrangeTicketPayloadExpectedStructure());
+      expect(payload.tickets.length).toEqual(updateData.data.length);
     });
 
     it('should trigger event as resoponse of ticket delete', async () => {
-      const ticketCreationPromise = waitForSocketEvent(
+      const ticketDeletionPromise = waitForSocketEvent(
         user2Socket,
         TICKET_DELETION_EVENT,
       );
@@ -210,8 +343,10 @@ describe('Websocket e2e', () => {
         .delete(`/projects/${project.id}/tickets/${ticket.id}`)
         .set('Authorization', `Bearer ${user1Token}`);
 
-      const payload = (await ticketCreationPromise) as TTicketCreationPayload;
+      const payload = (await ticketDeletionPromise) as TTicketDeletionPayload;
       expect(payload).toEqual(getDeleteTicketPayloadExpectedStructure());
+      expect(payload.projectId).toEqual(project.id);
+      expect(payload.ticketId).toEqual(ticket.id);
     });
   });
 });

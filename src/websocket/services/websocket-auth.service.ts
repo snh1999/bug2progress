@@ -4,6 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { AuthenticatedSocket } from '../websocket.types';
+import {
+  INVALID_HANDSHAKE_MESSAGE,
+  INVALID_TOKEN_MESSAGE,
+  NO_TOKEN_MESSAGE,
+} from '../websocket.constant';
 
 @Injectable()
 export class SocketAuthService {
@@ -26,7 +31,7 @@ export class SocketAuthService {
     const handshake = client.handshake;
 
     if (!handshake) {
-      throw new WsException('Invalid WebSocket handshake');
+      throw new WsException(INVALID_HANDSHAKE_MESSAGE);
     }
 
     const token =
@@ -36,7 +41,7 @@ export class SocketAuthService {
 
     if (!token) {
       this.logger.warn('No JWT token provided in WebSocket handshake');
-      throw new WsException('No authentication token provided');
+      throw new WsException(NO_TOKEN_MESSAGE);
     }
 
     return token;
@@ -55,7 +60,7 @@ export class SocketAuthService {
     } catch (error) {
       if (error instanceof Error)
         this.logger.error(`JWT verification failed: ${error.message}`);
-      throw new WsException('Invalid authentication token');
+      throw new WsException(INVALID_TOKEN_MESSAGE);
     }
   }
 }

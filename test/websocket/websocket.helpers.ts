@@ -14,7 +14,7 @@ export const connectSocket = ({
   projectId,
   baseUrl,
 }: {
-  token: string;
+  token?: string;
   projectId: string;
   baseUrl: string;
 }) => {

@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { bootstrapTestServer } from '../utils/bootstrap';
 import { getAccessToken } from '../helpers/access-token.helper';
 import request from 'supertest';
-import { connectSocket, waitForSocketEvent } from './websockets.helpers';
+import { connectSocket, waitForSocketEvent } from './websocket.helpers';
 import { createTestProject } from '../project/project.test-data';
 import { createTestTicket } from '../tickets/tickets.test-data';
 import { THttpServer } from '../utils/types';
@@ -24,6 +24,10 @@ import {
 import { TTicketCreationPayload } from '@/websocket/websocket.types';
 import { UpdateTicketPositionDto } from '@/ticket/dto';
 import { TicketStatus } from '@prisma/client';
+import {
+  INVALID_TOKEN_MESSAGE,
+  NO_TOKEN_MESSAGE,
+} from '@/websocket/websocket.constant';
 
 describe('Websocket e2e', () => {
   let app: INestApplication;
@@ -79,7 +83,7 @@ describe('Websocket e2e', () => {
         console.error('Socket connection failed in beforeEach:', error.message);
       user1Socket = null as any;
       user2Socket = null as any;
-      throw error; // Fail the test
+      throw error;
     }
   });
 
@@ -91,32 +95,28 @@ describe('Websocket e2e', () => {
     user2Socket?.removeAllListeners();
   });
 
-  // describe('Socket Authentication check', () => {
-  //   it('should create websocket with token', async () => {
-  //     const ioClient = io(baseUrl, {
-  //       auth: { token: `Bearer ${user1Token}` },
-  //       query: { projectId: project.id },
-  //       transports: ['websocket'],
-  //       reconnection: false,
-  //     });
+  describe('Socket Authentication check', () => {
+    it('should create websocket without token', async () => {
+      try {
+        await connectSocket({
+          baseUrl,
+          projectId: project.id,
+        });
+      } catch (error) {
+        if (error instanceof Error)
+          expect(error.message).toEqual(NO_TOKEN_MESSAGE);
+      }
+    });
 
-  //     ioClient.connect();
-
-  //     ioClient.disconnect();
-  //   });
-
-  //   it('should create websocket with token', async () => {
-  //     const ioClient = io(baseUrl, {
-  //       query: { projectId: project.id },
-  //       transports: ['websocket'],
-  //       reconnection: false,
-  //     });
-
-  //     ioClient.connect();
-
-  //     ioClient.disconnect();
-  //   });
-  // });
+    it('should create websocket without token', async () =>
+      connectSocket({
+        baseUrl,
+        token: 'invalid_token',
+        projectId: project.id,
+      }).catch((error) =>
+        expect(error.message).toEqual(INVALID_TOKEN_MESSAGE),
+      ));
+  });
 
   describe('Ticket Events', () => {
     it('should trigger event as resoponse of ticket creation', async () => {
@@ -195,8 +195,6 @@ describe('Websocket e2e', () => {
         .send(updateData);
 
       const payload = (await ticketCreationPromise) as TTicketCreationPayload;
-      console.log(payload);
-
       expect(payload).toEqual(getRearrangeTicketPayloadExpectedStructure());
     });
 

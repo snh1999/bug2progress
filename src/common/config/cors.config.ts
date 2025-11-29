@@ -1,6 +1,9 @@
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
-const LOCAL_ALLOWED_URLS_WILDCARDS = ['http://localhost:*'];
+const LOCAL_ALLOWED_URLS_WILDCARDS = [
+  'http://localhost:*',
+  'http://127.0.0.1:*',
+];
 
 const ALLOWED_HEADERS = [
   'host',
@@ -36,6 +39,7 @@ const ALLOWED_METHODS = [
 export function getCorsConfig(): CorsOptions {
   return {
     origin: getAllowedOrigins(),
+    methods: ALLOWED_METHODS,
     allowedHeaders: getAllowedHeaders(),
   };
 }
@@ -56,6 +60,8 @@ export function getAllowedOrigins(): (
         return;
       }
     }
+
+    console.warn(`CORS blocked origin: ${origin}`);
     callback(null, false);
   };
 }

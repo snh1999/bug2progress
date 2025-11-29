@@ -51,7 +51,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.handleServerError(exception);
     }
 
-    if (this.config.get('NODE_ENV') == 'DEV') {
+    if (this.config.get('NODE_ENV') == 'development') {
       responseBody = this.sendDevResponse(exception);
     } else {
       responseBody = this.sendProdResponse(path);

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-
-import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
-import { PrismaService } from '@/prisma/prisma.service';
+import type { PrismaService } from '@/prisma/prisma.service';
+import type { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
 
 @Injectable()
 export class TicketCommentService {

@@ -1,3 +1,4 @@
+import { ProjectStatus } from '@prisma/client';
 import {
   IsAlphanumeric,
   IsBoolean,
@@ -7,7 +8,6 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { ProjectStatus } from '@prisma/client';
 export class CreateProjectDto {
   @IsOptional()
   @IsString()

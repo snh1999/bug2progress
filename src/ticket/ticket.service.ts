@@ -172,7 +172,6 @@ export class TicketService {
     await this.prisma.ticket.delete({
       where: {
         id,
-        creatorId: userId,
       },
     });
 

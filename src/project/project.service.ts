@@ -3,17 +3,17 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProjectRole } from '@prisma/client';
-import { PostService } from '../post/post.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { UserService } from '../user/user.service';
-import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
 import { generateRandomString } from '@/utils/hashedString';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   PROJECT_DELETION_EVENT,
   PROJECT_UPDATE_EVENT,
 } from '@/websocket/events.constant';
+import type { PostService } from '../post/post.service';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { UserService } from '../user/user.service';
+import type { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
 
 @Injectable()
 export class ProjectService {

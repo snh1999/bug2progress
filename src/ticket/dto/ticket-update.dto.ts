@@ -1,5 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateTicketDto } from './ticket-create.dto';
+import { TicketStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -10,8 +11,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { TicketStatus } from '@prisma/client';
+import { CreateTicketDto } from './ticket-create.dto';
 
 export class UpdateTicketDto extends PartialType(CreateTicketDto) {
   @IsOptional()

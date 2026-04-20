@@ -1,26 +1,26 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseInterceptors,
-  UseGuards,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { TicketService } from './ticket.service';
-import {
+import { ApiTags } from '@nestjs/swagger';
+import { GetUser } from '@/common/decorator';
+import { JwtAuthGuard } from '@/common/guard';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
+import type {
   CreateTicketDto,
   UpdateTicketDto,
   UpdateTicketPositionDto,
 } from './dto';
-import { ApiTags } from '@nestjs/swagger';
-import { GetUser } from '@/common/decorator';
-import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
-import { JwtAuthGuard } from '@/common/guard';
-import { FindAllTicketsQuery } from './dto/find-ticket.query';
+import type { FindAllTicketsQuery } from './dto/find-ticket.query';
+import type { TicketService } from './ticket.service';
 
 @ApiTags('Ticket')
 @UseInterceptors(ResponseTransformInterceptor)

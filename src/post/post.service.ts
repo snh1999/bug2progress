@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { PrismaService } from '@/prisma/prisma.service';
+import type { PrismaService } from '@/prisma/prisma.service';
+import type { CreatePostDto } from './dto/create-post.dto';
+import type { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostService {
@@ -13,7 +13,7 @@ export class PostService {
     // }
 
     if (!dto.summary) {
-      dto.summary = dto.postContent.substring(0, 100) + '...';
+      dto.summary = `${dto.postContent.substring(0, 100)}...`;
     }
 
     const post = await this.prisma.post.create({

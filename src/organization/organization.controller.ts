@@ -1,24 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
-import { OrganizationService } from './organization.service';
-import {
-  CreateOrganizationDto,
-  UpdateOrganizationDto,
-  OrgMembersDto,
-  OrgMemberRoleDto,
-  ChangeMemberRoleDto,
-} from './dto';
-import { JwtAuthGuard } from '../common/guard';
-import { GetUser, Public } from '../common/decorator';
 import { ApiTags } from '@nestjs/swagger';
+import { GetUser, Public } from '../common/decorator';
+import { JwtAuthGuard } from '../common/guard';
+import type {
+  ChangeMemberRoleDto,
+  CreateOrganizationDto,
+  OrgMemberRoleDto,
+  OrgMembersDto,
+  UpdateOrganizationDto,
+} from './dto';
+import type { OrganizationService } from './organization.service';
 
 @ApiTags('Organization')
 @UseGuards(JwtAuthGuard)
@@ -26,7 +26,6 @@ import { ApiTags } from '@nestjs/swagger';
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
-  // ############################ Get all Org, Create New ##############################
   @Post()
   create(
     @Body() createOrganizationDto: CreateOrganizationDto,
@@ -41,7 +40,6 @@ export class OrganizationController {
     return this.organizationService.findAll();
   }
 
-  // ############################ Get all member, Remove existing ##############################
   // TODO - TEST
   @Get(':orgid/members')
   viewAllMembers(
@@ -89,7 +87,6 @@ export class OrganizationController {
     return this.organizationService.removeMember(orgid, userid);
   }
 
-  // ############################ Get all posts, projects, organization page ##############################
   @Get(':orgid/posts')
   findPosts(@Param('orgid') orgid: string) {
     return this.organizationService.findPosts(orgid);
@@ -105,7 +102,6 @@ export class OrganizationController {
   findOne(@Param('orgid') orgid: string) {
     return this.organizationService.findOne(orgid);
   }
-  // ############################ Get edit, delete ##############################
   // check admin later
   @Patch(':orgid')
   update(

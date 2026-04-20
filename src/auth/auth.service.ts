@@ -1,22 +1,16 @@
+import * as crypto from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
+import type { JwtService } from '@nestjs/jwt';
 import * as argon from 'argon2';
-import { PrismaService } from '../prisma/prisma.service';
-import {
-  LoginDto,
-  PasswordChangeDto,
-  RegisterDto,
-  JwtTokenPayload,
-} from './dto';
-import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
-import { EmailService } from './email.service';
-import { Response } from 'express';
+import type { Response } from 'express';
+import { hashTokenString } from '@/utils/hashedString';
+import type { PrismaService } from '../prisma/prisma.service';
 import {
   EMAIL_SEND_ERROR_MESSAGE,
   EMAIL_SEND_SUCCESS_MESSAGE,
@@ -28,7 +22,13 @@ import {
   PROFILE_NOT_FOUND_MESSAGE,
   WRONG_PASSWORD_MESSAGE,
 } from './auth.constants';
-import { hashTokenString } from '@/utils/hashedString';
+import type {
+  JwtTokenPayload,
+  LoginDto,
+  PasswordChangeDto,
+  RegisterDto,
+} from './dto';
+import type { EmailService } from './email.service';
 @Injectable()
 export class AuthService {
   constructor(

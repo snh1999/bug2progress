@@ -8,14 +8,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { GetUser } from '../common/decorator/get-user.decorator';
-import { ProfileService } from './profile.service';
-import { UserService } from './user.service';
-import { EditProfileDto, InputPasswordDto } from './dto';
+import { ApiTags } from '@nestjs/swagger';
 import { Public, Roles } from '../common/decorator';
+import { GetUser } from '../common/decorator/get-user.decorator';
 import { JwtAuthGuard, RolesGuard } from '../common/guard';
 import { Role } from '../common/types';
-import { ApiTags } from '@nestjs/swagger';
+import type { EditProfileDto, InputPasswordDto } from './dto';
+import type { ProfileService } from './profile.service';
+import type { UserService } from './user.service';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)

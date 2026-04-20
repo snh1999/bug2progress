@@ -1,22 +1,22 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ProjectService } from './project.service';
-import { CreateProjectDto, UpdateProjectDto, ContributorDto } from './dto';
-import { ProjectRole } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/common/guard';
+import type { ProjectRole } from '@prisma/client';
 import { GetUser } from '@/common/decorator';
+import { JwtAuthGuard } from '@/common/guard';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
+import type { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
+import type { ProjectService } from './project.service';
 
 @ApiTags('Project')
 @UseGuards(JwtAuthGuard)

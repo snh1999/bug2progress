@@ -1,16 +1,16 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { TicketCommentService } from './ticket-comment.service';
-import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
+import type { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
+import type { TicketCommentService } from './ticket-comment.service';
 
 @ApiTags('Ticket-comment')
 @Controller('ticket/comment/:ticketid')

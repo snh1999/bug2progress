@@ -1,4 +1,4 @@
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 const LOCAL_ALLOWED_URLS_WILDCARDS = [
   'http://localhost:*',
@@ -45,12 +45,17 @@ export function getCorsConfig(): CorsOptions {
 }
 
 export function getAllowedOrigins(): (
-  origin: string,
+  origin: string | undefined,
   callback: (err: Error | null, allow?: boolean) => void,
 ) => void {
   const allowedOriginWildcards = getAllowedOriginWildcards();
 
   return (origin, callback) => {
+    if (!origin) {
+      callback(null, false);
+      return;
+    }
+
     for (const allowedOriginWildcard of allowedOriginWildcards) {
       const regexPattern = new RegExp(
         '^' + allowedOriginWildcard.replace(/\*/g, '.*') + '$',

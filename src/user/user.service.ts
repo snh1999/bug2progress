@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-// import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
-import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
+// import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
+import type { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {

@@ -4,6 +4,9 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { MemberType } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { UserService } from '@/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ChangeMemberRoleDto,
@@ -11,9 +14,6 @@ import {
   UpdateOrganizationDto,
 } from './dto';
 import * as ORG from './permissions';
-import { MemberType } from '@prisma/client';
-import { UserService } from '@/user/user.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class OrganizationService {

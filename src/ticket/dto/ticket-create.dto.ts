@@ -1,3 +1,4 @@
+import { TicketPriority, TicketStatus, TicketType } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { TicketPriority, TicketStatus, TicketType } from '@prisma/client';
 export class CreateTicketDto {
   @IsString()
   @IsNotEmpty()

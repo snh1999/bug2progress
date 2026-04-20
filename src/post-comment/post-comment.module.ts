@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { PostCommentService } from './post-comment.service';
-import { PostCommentController } from './post-comment.controller';
 import { PostModule } from '@/post/post.module';
+import { PostCommentController } from './post-comment.controller';
+import { PostCommentService } from './post-comment.service';
 
 @Module({
   controllers: [PostCommentController],

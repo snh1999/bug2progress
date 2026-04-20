@@ -1,14 +1,14 @@
 import {
-  ExceptionFilter,
-  ArgumentsHost,
+  type ArgumentsHost,
+  BadRequestException,
+  Catch,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
-  BadRequestException,
   UnauthorizedException,
-  Catch,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpAdapterHost } from '@nestjs/core';
+import type { ConfigService } from '@nestjs/config';
+import type { HttpAdapterHost } from '@nestjs/core';
 import {
   PrismaClientInitializationError,
   PrismaClientKnownRequestError,

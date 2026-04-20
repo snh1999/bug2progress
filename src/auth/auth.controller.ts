@@ -1,26 +1,26 @@
 import {
-  Controller,
   Body,
-  Post,
+  Controller,
   Headers,
   Param,
-  UseGuards,
+  Post,
   Res,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
-import { AuthService } from './auth.service';
-import {
+import type { Response } from 'express';
+import { GetUser } from '@/common/decorator';
+import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
+import type { AuthService } from './auth.service';
+import type {
+  JwtTokenPayload,
   LoginDto,
   PasswordChangeDto,
   PasswordForgotDto,
   PasswordResetDto,
   RegisterDto,
-  JwtTokenPayload,
 } from './dto';
-import { GetUser } from '@/common/decorator';
-import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
 
 @UseInterceptors(ResponseTransformInterceptor)
 @Controller()

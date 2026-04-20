@@ -114,8 +114,6 @@ export class PostService {
     };
   }
 
-  // ########################### helper function #################
-
   async createBasePost(userId: string, title: string, options?: UpdatePostDto) {
     return this.prisma.post.create({
       data: {

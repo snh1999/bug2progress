@@ -15,8 +15,10 @@ import { AllExceptionsFilter } from './common/interceptor/exceptions.filter';
 import { validate } from './common/config/env.validation';
 import { WebsocketModule } from './websocket/websocket.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { HealthController } from './health/health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     AuthModule,
     PrismaModule,

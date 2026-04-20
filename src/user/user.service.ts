@@ -10,7 +10,6 @@ export class UserService {
   // leave organization
   // change organization
 
-  // ########################## deactivate account ##############################
   async deactivateMyProfile(userId: string, password: string) {
     // check if user password is correct
     if (!(await this.checkPassword(userId, password)))
@@ -27,7 +26,6 @@ export class UserService {
     };
   }
 
-  // ########################## delete account ##############################
   async deleteMyProfile(userId: string, password: string) {
     // check if user password is correct
     if (!(await this.checkPassword(userId, password)))
@@ -38,7 +36,6 @@ export class UserService {
     });
   }
 
-  // ########################## delete user(ADMIN) ##############################
   async deleteUser(username: string) {
     const id = await this.getIdFromUser(username);
     await this.prisma.user.delete({
@@ -60,11 +57,9 @@ export class UserService {
     return profile.userId;
   }
 
-  // ########################## view all user(ADMIN) ##############################
   async findAll() {
     return await this.prisma.user.findMany({});
   }
-  // ########################## helper functions ################################
   async checkPassword(userId: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

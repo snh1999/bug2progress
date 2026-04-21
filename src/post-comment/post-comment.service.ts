@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { PostService } from '@/post/post.service';
-import type { PrismaService } from '@/prisma/prisma.service';
-import type { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
+import { PostService } from '@/post/post.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
 
 @Injectable()
 export class PostCommentService {
@@ -36,7 +36,7 @@ export class PostCommentService {
     });
   }
 
-  async findOne(id: string) {
+  findOne(id: string) {
     return this.prisma.postComment.findUnique({
       where: {
         id,
@@ -44,8 +44,8 @@ export class PostCommentService {
     });
   }
 
-  async update(id: string, dto: UpdatePostCommentDto, userid: string) {
-    return await this.prisma.postComment.updateMany({
+  update(id: string, dto: UpdatePostCommentDto, userid: string) {
+    return this.prisma.postComment.updateMany({
       where: {
         AND: [{ id }, { authorId: userid }],
       },

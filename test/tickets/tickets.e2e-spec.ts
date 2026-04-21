@@ -47,7 +47,7 @@ describe('App e2e', () => {
     describe('POST /projects/:projectId/tickets', () => {
       let createTicketsDto: CreateTicketDto;
 
-      beforeEach(async () => {
+      beforeEach(() => {
         createTicketsDto = getCreateTicketMockDto();
       });
 

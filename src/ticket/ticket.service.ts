@@ -96,7 +96,7 @@ export class TicketService {
     });
   }
 
-  async findOne(id: string, userId: string) {
+  findOne(id: string, userId: string) {
     return this.prisma.ticket.findUniqueOrThrow({
       where: {
         id,
@@ -122,7 +122,7 @@ export class TicketService {
 
     const { data } = dto;
 
-    const updatedTickets = await this.prisma.$transaction(async (prisma) => {
+    const updatedTickets = await this.prisma.$transaction((prisma) => {
       const updates = data.map(({ id, ...rest }) =>
         prisma.ticket.update({
           where: { id },

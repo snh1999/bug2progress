@@ -5,12 +5,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
-import type { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import * as argon from 'argon2';
-import type { Response } from 'express';
+import { Response } from 'express';
 import { hashTokenString } from '@/utils/hashedString';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   EMAIL_SEND_ERROR_MESSAGE,
   EMAIL_SEND_SUCCESS_MESSAGE,
@@ -22,13 +22,13 @@ import {
   PROFILE_NOT_FOUND_MESSAGE,
   WRONG_PASSWORD_MESSAGE,
 } from './auth.constants';
-import type {
+import {
   JwtTokenPayload,
   LoginDto,
   PasswordChangeDto,
   RegisterDto,
 } from './dto';
-import type { EmailService } from './email.service';
+import { EmailService } from './email.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -54,7 +54,7 @@ export class AuthService {
       throw new NotFoundException(PROFILE_NOT_FOUND_MESSAGE);
     }
 
-    return await this.sendCookie(res, {
+    return this.sendCookie(res, {
       id: user.id,
       username: profile.username,
       name: profile.name,
@@ -203,7 +203,7 @@ export class AuthService {
     return token;
   }
 
-  private async findUserByEmail(email: string) {
+  private findUserByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
       include: {

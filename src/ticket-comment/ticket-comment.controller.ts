@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
-import type { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
-import type { TicketCommentService } from './ticket-comment.service';
+import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
+import { TicketCommentService } from './ticket-comment.service';
 
 @ApiTags('Ticket-comment')
 @Controller('ticket/comment/:ticketid')

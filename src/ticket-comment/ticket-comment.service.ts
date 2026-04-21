@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { PrismaService } from '@/prisma/prisma.service';
-import type { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateTicketCommentDto, UpdateTicketCommentDto } from './dto';
 
 @Injectable()
 export class TicketCommentService {
   constructor(private prisma: PrismaService) {}
 
   // check if ticketid is valid @ frontend
-  async create(ticketid: string, dto: CreateTicketCommentDto, userid: string) {
+  create(ticketid: string, dto: CreateTicketCommentDto, userid: string) {
     // author comes from @GetUser and text contained in dto
-    return await this.prisma.ticketComment.create({
+    return this.prisma.ticketComment.create({
       data: {
         ...dto,
         parentTicketId: ticketid,
@@ -18,24 +18,24 @@ export class TicketCommentService {
     });
   }
 
-  async findAll(ticketid: string) {
-    return await this.prisma.ticketComment.findMany({
+  findAll(ticketid: string) {
+    return this.prisma.ticketComment.findMany({
       where: {
         parentTicketId: ticketid,
       },
     });
   }
 
-  async findOne(id: string) {
-    return await this.prisma.ticketComment.findUnique({
+  findOne(id: string) {
+    return this.prisma.ticketComment.findUnique({
       where: {
         id,
       },
     });
   }
 
-  async update(id: string, dto: UpdateTicketCommentDto, userid: string) {
-    return await this.prisma.ticketComment.updateMany({
+  update(id: string, dto: UpdateTicketCommentDto, userid: string) {
+    return this.prisma.ticketComment.updateMany({
       where: {
         AND: [{ id }, { authorId: userid }],
       },

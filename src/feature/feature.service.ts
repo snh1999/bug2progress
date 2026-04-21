@@ -33,15 +33,15 @@ export class FeatureService {
     return feature;
   }
 
-  async findAll(projectId: string) {
-    return await this.prisma.features.findMany({
+  findAll(projectId: string) {
+    return this.prisma.features.findMany({
       where: {
         projectId,
       },
     });
   }
 
-  async findOne(id: string, projectId?: string) {
+  findOne(id: string, projectId?: string) {
     return this.prisma.features.findUniqueOrThrow({
       where: {
         id,

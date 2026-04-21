@@ -11,12 +11,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { ProjectRole } from '@prisma/client';
+import { ProjectRole } from '@prisma/client';
 import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
-import type { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
-import type { ProjectService } from './project.service';
+import { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
+import { ProjectService } from './project.service';
 
 @ApiTags('Project')
 @UseGuards(JwtAuthGuard)

@@ -3,9 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { EditProfileDto } from './dto';
-import type { UserService } from './user.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { EditProfileDto } from './dto';
+import { UserService } from './user.service';
 
 @Injectable()
 export class ProfileService {
@@ -14,13 +14,13 @@ export class ProfileService {
     private userService: UserService,
   ) {}
 
-  async getMyProfile(userId: string) {
-    return await this.returnProfile(userId, true);
+  getMyProfile(userId: string) {
+    return this.returnProfile(userId, true);
   }
 
   async viewProfile(username: string) {
     const userid = await this.userService.getIdFromUser(username);
-    return await this.returnProfile(userid, false);
+    return this.returnProfile(userid, false);
   }
 
   async editMyProfile(userId: string, dto: EditProfileDto) {
@@ -30,7 +30,7 @@ export class ProfileService {
       delete dto.email;
     }
     // update profile
-    return await this.prisma.profile.update({
+    return this.prisma.profile.update({
       where: {
         userId: userId,
       },
@@ -45,7 +45,7 @@ export class ProfileService {
       where: { email },
     });
     if (user) {
-      if (user.id == userId) {
+      if (user.id === userId) {
         throw new Error('This is already your email, Please Enter a new email');
       } else {
         throw new BadRequestException('Email already in use');

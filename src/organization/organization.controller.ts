@@ -11,14 +11,14 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser, Public } from '../common/decorator';
 import { JwtAuthGuard } from '../common/guard';
-import type {
+import {
   ChangeMemberRoleDto,
   CreateOrganizationDto,
   OrgMemberRoleDto,
   OrgMembersDto,
   UpdateOrganizationDto,
 } from './dto';
-import type { OrganizationService } from './organization.service';
+import { OrganizationService } from './organization.service';
 
 @ApiTags('Organization')
 @UseGuards(JwtAuthGuard)

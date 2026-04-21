@@ -13,9 +13,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
-import type { CreateFeatureDto } from './dto/feature-create.dto';
-import type { UpdateFeatureDto } from './dto/feature-update.dto';
-import type { FeatureService } from './feature.service';
+import { CreateFeatureDto } from './dto/feature-create.dto';
+import { UpdateFeatureDto } from './dto/feature-update.dto';
+import { FeatureService } from './feature.service';
 
 @ApiTags('Features')
 @UseInterceptors(ResponseTransformInterceptor)

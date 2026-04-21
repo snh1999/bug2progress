@@ -14,13 +14,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
-import type {
+import {
   CreateTicketDto,
   UpdateTicketDto,
   UpdateTicketPositionDto,
 } from './dto';
-import type { FindAllTicketsQuery } from './dto/find-ticket.query';
-import type { TicketService } from './ticket.service';
+import { FindAllTicketsQuery } from './dto/find-ticket.query';
+import { TicketService } from './ticket.service';
 
 @ApiTags('Ticket')
 @UseInterceptors(ResponseTransformInterceptor)

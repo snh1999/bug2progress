@@ -12,9 +12,9 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
-import type { CreatePostDto } from './dto/create-post.dto';
-import type { UpdatePostDto } from './dto/update-post.dto';
-import type { PostService } from './post.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { PostService } from './post.service';
 
 @ApiTags('Post')
 @Controller('posts')
@@ -28,7 +28,7 @@ export class PostController {
   }
 
   @Get()
-  async findAll(@Query('user') user?: string) {
+  findAll(@Query('user') user?: string) {
     return this.postService.findAll(user);
   }
 

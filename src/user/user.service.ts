@@ -1,12 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import * as argon from 'argon2';
 // import { HandlePrismaDuplicateError } from '../common/interceptor/handle.prisma-error';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
-
   // leave organization
   // change organization
 
@@ -57,8 +56,8 @@ export class UserService {
     return profile.userId;
   }
 
-  async findAll() {
-    return await this.prisma.user.findMany({});
+  findAll() {
+    return this.prisma.user.findMany({});
   }
   async checkPassword(userId: string, password: string) {
     const user = await this.prisma.user.findUnique({
@@ -81,7 +80,7 @@ export class UserService {
           email,
         },
       });
-    } catch (error) {
+    } catch (_error) {
       // new HandlePrismaDuplicateError(error, 'email');
     }
   }

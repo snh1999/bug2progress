@@ -11,8 +11,8 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '@/common/decorator';
 import { JwtAuthGuard } from '@/common/guard';
-import type { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
-import type { PostCommentService } from './post-comment.service';
+import { CreatePostCommentDto, UpdatePostCommentDto } from './dto';
+import { PostCommentService } from './post-comment.service';
 
 @ApiTags('Post-Comment')
 @UseGuards(JwtAuthGuard)

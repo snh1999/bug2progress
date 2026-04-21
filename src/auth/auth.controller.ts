@@ -9,11 +9,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { Response } from 'express';
+import { Response } from 'express';
 import { GetUser } from '@/common/decorator';
 import { ResponseTransformInterceptor } from '@/common/interceptor/response-transform.interceptor';
-import type { AuthService } from './auth.service';
-import type {
+import { AuthService } from './auth.service';
+import {
   JwtTokenPayload,
   LoginDto,
   PasswordChangeDto,

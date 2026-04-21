@@ -7,8 +7,8 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
-import type { HttpAdapterHost } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { HttpAdapterHost } from '@nestjs/core';
 import {
   PrismaClientInitializationError,
   PrismaClientKnownRequestError,
@@ -42,7 +42,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.exceptionStack = exception;
       if (exception instanceof BadRequestException || UnauthorizedException) {
         this.reason = exception.getResponse();
-        if (this.reason.message == this.httpMessage) {
+        if (this.reason.message === this.httpMessage) {
           this.reason = undefined;
           this.exceptionStack = undefined;
         }
@@ -51,7 +51,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.handleServerError(exception);
     }
 
-    if (this.config.get('NODE_ENV') == 'development') {
+    if (this.config.get('NODE_ENV') === 'development') {
       responseBody = this.sendDevResponse(exception);
     } else {
       responseBody = this.sendProdResponse(path);
@@ -80,11 +80,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
   handlePrismaClientKnownRequestError(
     exception: PrismaClientKnownRequestError,
   ) {
-    if (exception.code == 'P2002') {
+    if (exception.code === 'P2002') {
       this.httpStatus = HttpStatus.CONFLICT;
       this.httpMessage = `Duplicate field ${exception.meta?.target || ''}`;
       this.errorTitle = 'Unique Constraint failed';
-    } else if (exception.code == 'P2025') {
+    } else if (exception.code === 'P2025') {
       this.httpStatus = HttpStatus.NOT_FOUND;
       this.httpMessage = exception.message;
       this.errorTitle = 'Not found';

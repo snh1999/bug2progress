@@ -22,7 +22,7 @@ export class OrganizationService {
     private userService: UserService,
   ) {}
 
-  async create(dto: CreateOrganizationDto, userid: string) {
+  create(dto: CreateOrganizationDto, userid: string) {
     return this.prisma.organization.create({
       data: {
         ...dto,
@@ -139,9 +139,9 @@ export class OrganizationService {
     dto: ChangeMemberRoleDto,
     userid: string,
   ) {
-    if (dto.role == 'ADMIN')
+    if (dto.role === 'ADMIN')
       await this.isUserAuthorized(orgUrl, userid, ORG.ADMIN_PERMISSION);
-    else if (dto.role == 'MODERATOR')
+    else if (dto.role === 'MODERATOR')
       await this.isUserAuthorized(orgUrl, userid, ORG.MODERATOR_PERMISSION);
 
     const idToAdd = await this.userService.getIdFromUser(dto.userName);
@@ -174,7 +174,7 @@ export class OrganizationService {
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
-        error.code == 'P2002'
+        error.code === 'P2002'
       ) {
         throw new BadRequestException('User already member of organization');
       }
@@ -250,11 +250,11 @@ export class OrganizationService {
     userid: string,
     authorizedPerson?: ORG.OrgRoles,
   ) {
-    if (userid == (await this.getOwnerId(orgUrl))) return;
-    else if (authorizedPerson == ORG.OrgRoles.ADMIN) {
+    if (userid === (await this.getOwnerId(orgUrl))) return;
+    else if (authorizedPerson === ORG.OrgRoles.ADMIN) {
       const adminObj = await this.getMemberIdsByRole(orgUrl, MemberType.ADMIN);
       if (this.checkElementAtObj(adminObj, userid)) return;
-    } else if (authorizedPerson == ORG.OrgRoles.MODERATOR) {
+    } else if (authorizedPerson === ORG.OrgRoles.MODERATOR) {
       const adminObj = await this.getMemberIdsByRole(orgUrl, MemberType.ADMIN);
       const modObj = await this.getMemberIdsByRole(
         orgUrl,
@@ -276,7 +276,6 @@ export class OrganizationService {
     arrObj.forEach((element: any) => {
       if (element.userId === value) {
         // ret = true;
-        return;
       }
       // ret = false;
     });

@@ -37,12 +37,11 @@ describe('App e2e', () => {
   });
 
   describe('PostController (e2e)', () => {
-    let postsCount = 3;
-    let authorId: string;
+    const postsCount = 3;
     describe('POST /posts', () => {
       let createPostDto: CreatePostDto;
 
-      beforeAll(async () => {
+      beforeAll(() => {
         createPostDto = getCreatePostMockDto();
       });
 
@@ -126,13 +125,11 @@ describe('App e2e', () => {
 
     describe('GET /posts', () => {
       beforeEach(async () => {
-        const posts = await Promise.all(
+        await Promise.all(
           Array(postsCount)
             .fill(0)
             .map(() => createTestPost(httpServer, accessToken)),
         );
-
-        authorId = posts[0].authorId;
       });
 
       it('should return UNAUTHORIZED (401) and array of all projects without auth token', async () => {
@@ -151,7 +148,6 @@ describe('App e2e', () => {
           .get('/posts')
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(HttpStatus.OK);
-        authorId;
 
         expect(response.body).toHaveLength(postsCount);
         response.body.forEach((post: any) => {

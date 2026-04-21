@@ -44,7 +44,7 @@ describe('App e2e', () => {
     describe('POST /projects', () => {
       let createProjectDto: CreateProjectDto;
 
-      beforeEach(async () => {
+      beforeEach(() => {
         createProjectDto = getCreateProjectMockDto();
       });
       it('should successfully create a project and return CREATED (201) when request with valid data and auth', async () => {

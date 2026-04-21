@@ -3,17 +3,17 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import type { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProjectRole } from '@prisma/client';
 import { generateRandomString } from '@/utils/hashedString';
 import {
   PROJECT_DELETION_EVENT,
   PROJECT_UPDATE_EVENT,
 } from '@/websocket/events.constant';
-import type { PostService } from '../post/post.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { UserService } from '../user/user.service';
-import type { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
+import { PostService } from '../post/post.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserService } from '../user/user.service';
+import { ContributorDto, CreateProjectDto, UpdateProjectDto } from './dto';
 
 @Injectable()
 export class ProjectService {
@@ -24,7 +24,7 @@ export class ProjectService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async create(dto: CreateProjectDto, userId: string) {
+  create(dto: CreateProjectDto, userId: string) {
     // if (dto.organizationId) {
     //   dto.organizationId = (
     //     await this.orgService.findOne(dto.organizationId)
@@ -49,15 +49,15 @@ export class ProjectService {
     });
   }
 
-  async findAll(userid?: string) {
+  findAll(userid?: string) {
     if (userid)
-      return await this.prisma.project.findMany({
+      return this.prisma.project.findMany({
         where: {
           OR: [{ ownerId: userid }, { members: { some: { userId: userid } } }],
         },
         orderBy: { createdAt: 'desc' },
       });
-    return await this.prisma.project.findMany({});
+    return this.prisma.project.findMany({});
   }
 
   async findOne(id: string, userid: string) {
@@ -71,7 +71,7 @@ export class ProjectService {
     });
   }
 
-  async find(id: string) {
+  find(id: string) {
     return this.prisma.project.findFirstOrThrow({
       where: {
         OR: [{ id }, { urlid: id }],
@@ -219,7 +219,7 @@ export class ProjectService {
   async checkPermission(projectId: string, userId: string) {
     const project = await this.find(projectId);
 
-    if (project.ownerId != userId)
+    if (project.ownerId !== userId)
       throw new ForbiddenException('You are not authorized for the action');
 
     return project;

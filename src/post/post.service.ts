@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { PrismaService } from '@/prisma/prisma.service';
-import type { CreatePostDto } from './dto/create-post.dto';
-import type { UpdatePostDto } from './dto/update-post.dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostService {
@@ -27,7 +27,7 @@ export class PostService {
     return post;
   }
 
-  async findAll(user?: string) {
+  findAll(user?: string) {
     if (user)
       return this.prisma.post.findMany({
         where: {
@@ -56,7 +56,7 @@ export class PostService {
     return this.prisma.post.findMany({});
   }
 
-  async findOne(id: string) {
+  findOne(id: string) {
     return this.prisma.post.findFirstOrThrow({
       where: {
         OR: [{ id }, { slug: id }],
@@ -114,7 +114,7 @@ export class PostService {
     };
   }
 
-  async createBasePost(userId: string, title: string, options?: UpdatePostDto) {
+  createBasePost(userId: string, title: string, options?: UpdatePostDto) {
     return this.prisma.post.create({
       data: {
         title,

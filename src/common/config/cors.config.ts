@@ -59,7 +59,7 @@ export function getAllowedOrigins(): (
 
     for (const allowedOriginWildcard of allowedOriginWildcards) {
       const regexPattern = new RegExp(
-        '^' + allowedOriginWildcard.replace(/\*/g, '.*') + '$',
+        `^${allowedOriginWildcard.replace(/\*/g, '.*')}$`,
       );
       if (regexPattern.test(origin)) {
         callback(null, true);
@@ -77,11 +77,10 @@ export function getAllowedOriginWildcards(): string[] {
 
   switch (envStage) {
     case 'local':
-      return LOCAL_ALLOWED_URLS_WILDCARDS;
-
     case 'development':
-      return LOCAL_ALLOWED_URLS_WILDCARDS;
-
+      return LOCAL_ALLOWED_URLS_WILDCARDS.filter(
+        (url): url is string => url !== undefined,
+      );
     default:
       return [];
   }

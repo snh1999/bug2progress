@@ -6,7 +6,7 @@ The repository for [frontend](https://github.com/snh1999/bug2progress-frontend).
 
 ### 🚀 Getting Started
 
-1. Node.js (v20+), Docker and Docker Compose (for database/PostgreSQL) and [`bun`](https://bun.com/docs/installation), [`prisma`](https://www.prisma.io/docs/getting-started/quickstart) is required to run this project. Make sure there is [`node.js`](https://nodejs.org/en) and [`docker`](https://docs.docker.com/desktop/) is installed beforehand.
+1. Node.js (v20+), Docker and Docker Compose (for database/PostgreSQL) and [`npm`](https://docs.npmjs.com/download-and-installation), [`prisma`](https://www.prisma.io/docs/getting-started/quickstart) is required to run this project. Make sure there is [`node.js`](https://nodejs.org/en) and [`docker`](https://docs.docker.com/desktop/) is installed beforehand.
 
 ```bash
 # to install bun
@@ -18,7 +18,7 @@ curl -fsSL https://bun.com/install | bash
 ```bash
 git clone https://github.com/snh1999/bug2progress
 cd bug2progress
-bun install
+npm install
 ```
 
 3. Docker compose to manage database. [Note- make sure you check the `docker-compose.yml`]
@@ -43,7 +43,7 @@ npx db:migrate
 5. finally run the server
 
 ```bash
-bun start:dev
+npm run start:dev
 ```
 
 6. The API will be available at http://localhost:8080/api/v1 (you can change the port in the `main.ts` file)
@@ -53,27 +53,27 @@ bun start:dev
 
 ```bash
 # Development
-bun start:debug      # Start in debug mode
-bun start:prod       # Start production build
+npm run start:debug      # Start in debug mode
+npm run start:prod       # Start production build
 
 # Building
-bun build            # Build the application
-bun start            # Start built application
+npm run build            # Build the application
+npm run start            # Start built application
 
 # Database
-bun db:dev-deploy   # Deploy migrations to dev database
-bun db:test-deploy  # Deploy migrations to test database
-bun db:seed         # Seed database
-bun db:generate      # Generate Prisma client
-bun db:migrate   # Apply migrations
+npm run db:dev-deploy   # Deploy migrations to dev database
+npm run db:test-deploy  # Deploy migrations to test database
+npm run db:seed         # Seed database
+npm run db:generate      # Generate Prisma client
+npm run db:migrate   # Apply migrations
 
 
 # Testing
-bun test:e2e         # Run end-to-end tests
+npm run test:e2e         # Run end-to-end tests
 
 # Code Quality
-bun lint             # Run ESLint
-bun format           # Format code with Prettier
+npm run lint             # Run ESLint
+npm run format           # Format code with Prettier
 ```
 
 #### 🏗️ Entity Relationship Diagram and Architecture Overview

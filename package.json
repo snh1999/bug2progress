@@ -12,11 +12,11 @@
     "db:migrate": "prisma migrate dev",
     "db:dev:rm": "docker compose rm db -s -f -v",
     "db:dev:up": "docker compose up db -d",
-    "db:dev:reset": "bun db:dev:rm && bun db:dev:up && sleep 1 && prisma:dev-deploy",
+    "db:dev:reset": "npm run db:dev:rm && npm run db:dev:up && sleep 1 && npm run db:dev-deploy",
     "db:test-deploy": "dotenv -e .env.test -- prisma migrate deploy",
     "db:test:rm": "docker compose rm test-db -s -f -v",
     "db:test:up": "docker compose up test-db -d",
-    "db:test:reset": "bun db:test:rm && bun db:test:up && sleep 1 && bun prisma:test-deploy",
+    "db:test:reset": "npm run db:test:rm && npm run db:test:up && sleep 1 && npm run db:test-deploy",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -28,7 +28,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "bun db:test-deploy && dotenv -e .env.test --  jest --config ./test/jest-e2e.json"
+    "test:e2e": "npm run db:test-deploy && dotenv -e .env.test -- jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",

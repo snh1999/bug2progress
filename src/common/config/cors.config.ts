@@ -3,7 +3,6 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
 const LOCAL_ALLOWED_URLS_WILDCARDS = [
   'http://localhost:*',
   'http://127.0.0.1:*',
-  process.env.SITE_URL,
 ];
 
 const ALLOWED_HEADERS = [
@@ -74,15 +73,22 @@ export function getAllowedOrigins(): (
 
 export function getAllowedOriginWildcards(): string[] {
   const envStage = process.env.NODE_ENV;
+  const siteUrl = process.env.SITE_URL;
+
+  const baseUrls = siteUrl ? [siteUrl] : [];
 
   switch (envStage) {
     case 'local':
     case 'development':
-      return LOCAL_ALLOWED_URLS_WILDCARDS.filter(
-        (url): url is string => url !== undefined,
-      );
+      return [
+        ...LOCAL_ALLOWED_URLS_WILDCARDS.filter(
+          (url): url is string => url !== undefined,
+        ),
+        ...baseUrls,
+      ];
+    case 'production':
     default:
-      return [];
+      return baseUrls;
   }
 }
 

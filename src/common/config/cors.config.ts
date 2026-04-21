@@ -3,6 +3,7 @@ import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-option
 const LOCAL_ALLOWED_URLS_WILDCARDS = [
   'http://localhost:*',
   'http://127.0.0.1:*',
+  process.env.SITE_URL,
 ];
 
 const ALLOWED_HEADERS = [

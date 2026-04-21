@@ -1,14 +1,14 @@
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import {
+  DocumentBuilder,
+  type SwaggerDocumentOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import ratelimit from 'express-rate-limit';
 import helmet from 'helmet';
-import {
-  SwaggerModule,
-  DocumentBuilder,
-  SwaggerDocumentOptions,
-} from '@nestjs/swagger';
+import { AppModule } from './app.module';
 import { getAllowedMethods, getCorsConfig } from './common/config/cors.config';
 
 async function bootstrap() {
@@ -29,7 +29,7 @@ async function bootstrap() {
 
   app.use(
     ratelimit({
-      max: parseInt(process.env.MAX_REQ_HR || '100'),
+      max: parseInt(process.env.MAX_REQ_HR || '100', 10),
       windowMs: 60 * 60 * 1000,
       message: 'Too many requests from your network, Please try again later',
     }),

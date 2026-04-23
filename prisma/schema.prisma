@@ -28,7 +28,7 @@ model User {
   ticketCreator       Ticket[]
   ticketVerifier      Ticket[]        @relation("verifier")
   ticketAssigner      Ticket[]        @relation("assign")
-  projectXFeatures    Features[]
+  features    Features[]
 
   orgOwned  Organization[]
   orgJoined OrgMembers[]
@@ -143,14 +143,8 @@ model Project {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
-  // 			project page shows the
-  // 						project details
-  // 						issues associated
-  // 						different roles
-  // 						comments
-  // 						features
   post             Post[]               @relation("ref-project")
-  projectXFeatures Features[]
+  features Features[]
   ticket           Ticket[]
   members          ProjectContributor[]
 }

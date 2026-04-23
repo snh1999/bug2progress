@@ -55,9 +55,18 @@ export class ProjectService {
         where: {
           OR: [{ ownerId: userid }, { members: { some: { userId: userid } } }],
         },
+        include: {
+          _count: { select: { ticket: true, members: true } },
+        },
         orderBy: { createdAt: 'desc' },
       });
-    return this.prisma.project.findMany({});
+    return this.prisma.project.findMany({
+      include: {
+        _count: {
+          select: { ticket: true, members: true, features: true },
+        },
+      },
+    });
   }
 
   async findOne(id: string, userid: string) {

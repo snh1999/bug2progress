@@ -11,6 +11,7 @@ import * as argon from 'argon2';
 import { Response } from 'express';
 import { hashTokenString } from '@/utils/hashedString';
 import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '../common/types';
 import {
   EMAIL_SEND_ERROR_MESSAGE,
   EMAIL_SEND_SUCCESS_MESSAGE,
@@ -58,6 +59,7 @@ export class AuthService {
       id: user.id,
       username: profile.username,
       name: profile.name,
+      role: user.role as Role,
     });
   }
 
@@ -183,7 +185,7 @@ export class AuthService {
   private async sendCookie(res: Response, payload: JwtTokenPayload) {
     const token = await this.signToken(payload);
     const cookieOptions = {
-      expires: new Date(new Date().getTime() + 30 * 1000),
+      expires: new Date(new Date().getTime() + 30 * 60 * 24 * 1000),
       // sameSite: 'strict',
       httpOnly: true,
     };

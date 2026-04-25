@@ -70,17 +70,20 @@ export class ProjectService {
   }
 
   async findOne(id: string, userid: string) {
-    const project = await this.find(id);
+    const project = await this.findById(id);
     return this.prisma.project.findFirstOrThrow({
       where: {
         id: project.id,
         OR: [{ ownerId: userid }, { members: { some: { userId: userid } } }],
       },
-      include: { basePost: true },
+      include: {
+        basePost: true,
+        _count: { select: { features: true, members: true, ticket: true } },
+      },
     });
   }
 
-  find(id: string) {
+  findById(id: string) {
     return this.prisma.project.findFirstOrThrow({
       where: {
         OR: [{ id }, { urlid: id }],
@@ -106,7 +109,7 @@ export class ProjectService {
       where: { id, ownerId: userId },
       data: {
         ...projectData,
-        inviteCode: updateInviteCode ? await generateRandomString() : undefined,
+        inviteCode: updateInviteCode ? generateRandomString() : undefined,
       },
     });
 
@@ -167,7 +170,7 @@ export class ProjectService {
   }
 
   async findContributor(project: string, role?: ProjectRole, userId?: string) {
-    const existingProject = await this.find(project);
+    const existingProject = await this.findById(project);
 
     return this.prisma.projectContributor.findMany({
       where: {
@@ -226,7 +229,7 @@ export class ProjectService {
   }
 
   async checkPermission(projectId: string, userId: string) {
-    const project = await this.find(projectId);
+    const project = await this.findById(projectId);
 
     if (project.ownerId !== userId)
       throw new ForbiddenException('You are not authorized for the action');

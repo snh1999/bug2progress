@@ -17,8 +17,7 @@ export const connectSocket = ({
   token?: string;
   projectId: string;
   baseUrl: string;
-}) => {
-  return new Promise<Socket>((resolve, reject) => {
+}) => new Promise<Socket>((resolve, reject) => {
     const socket = io(baseUrl, {
       auth: { token },
       query: projectId ? { projectId } : {},
@@ -44,7 +43,6 @@ export const connectSocket = ({
       reject(new Error('Connection timeout - server not responding'));
     }, 3000);
   });
-};
 
 export function waitForSocketEvent<T>(
   socket: Socket,

@@ -3,6 +3,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -11,6 +12,7 @@ import { SocketAuthService } from './services/websocket-auth.service';
 import { JwtWsGuard } from './services/guard/jwt-ws.guard';
 import {
   AuthenticatedSocket,
+  TCursorPayload,
   TCommentCreationPayload,
   TCommentDeletionPayload,
   TCommentUpdatePayload,
@@ -35,6 +37,9 @@ import {
   FEATURE_UPDATE_EVENT,
   PROJECT_UPDATE_EVENT,
   PROJECT_DELETION_EVENT,
+  CURSOR_POSITION_EVENT,
+  CURSOR_INACTIVE_EVENT,
+  CURSOR_STOP_EVENT,
   COMMENT_CREATION_EVENT,
   COMMENT_UPDATE_EVENT,
   COMMENT_DELETION_EVENT,
@@ -85,6 +90,23 @@ export class WebsocketGateway
 
   handleDisconnect(client: AuthenticatedSocket) {
     this.logger.log(`Disconnected: ${client.id} | User: ${client.user.id}`);
+  }
+
+  @SubscribeMessage(CURSOR_POSITION_EVENT)
+  handleCursorPosition(client: AuthenticatedSocket, payload: TCursorPayload) {
+    this.socketService.handleCursorPosition(client, payload);
+  }
+
+  @SubscribeMessage(CURSOR_STOP_EVENT)
+  handleCursorStop(client: AuthenticatedSocket) {
+    if (!client.projectId) {
+      return;
+    }
+    this.socketService.handleEventTrigger({
+      payload: { userId: client.user.id, projectId: client.projectId },
+      server: this.server,
+      event: CURSOR_INACTIVE_EVENT,
+    });
   }
 
   @OnEvent(TICKET_CREATION_EVENT)

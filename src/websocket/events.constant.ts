@@ -10,6 +10,11 @@ export const FEATURE_CREATION_EVENT = 'feature.created';
 export const FEATURE_UPDATE_EVENT = 'feature.updated';
 export const FEATURE_DELETION_EVENT = 'feature.deleted';
 
+export const CURSOR_INACTIVE_EVENT = 'cursor:inactive';
+export const CURSOR_UPDATE_EVENT = 'cursor:update';
+export const CURSOR_POSITION_EVENT = 'cursor:position';
+export const CURSOR_STOP_EVENT = 'cursor:stop';
+
 export const USER_DISCONNECTED = 'user.disconnected';
 
 export const COMMENT_CREATION_EVENT = 'comment.created';

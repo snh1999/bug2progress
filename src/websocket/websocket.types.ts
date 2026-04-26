@@ -1,4 +1,4 @@
-import { Features, Project, Ticket } from '@prisma/client';
+import { Features, Project, Ticket, TicketComment } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 export interface AuthenticatedSocket extends Socket {
   user: {
@@ -7,6 +7,25 @@ export interface AuthenticatedSocket extends Socket {
     username: string;
   };
   projectId?: string;
+}
+
+import { TicketStatus } from '@prisma/client';
+
+export interface TCursorPayload {
+  x: number;
+  y: number;
+  userId: string;
+  userName: string;
+  color: string;
+  projectId: string;
+}
+
+export interface TicketMovePayload {
+  cardId: string;
+  sourceStatus: TicketStatus;
+  destinationStatus: TicketStatus;
+  position: number;
+  projectId: string;
 }
 
 type TCreationPayload = {

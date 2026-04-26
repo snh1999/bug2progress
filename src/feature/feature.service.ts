@@ -38,6 +38,9 @@ export class FeatureService {
       where: {
         projectId,
       },
+      include: {
+        _count: { select: { ticket: true } },
+      },
     });
   }
 
@@ -46,6 +49,9 @@ export class FeatureService {
       where: {
         id,
         projectId,
+      },
+      include: {
+        _count: { select: { ticket: true } },
       },
     });
   }

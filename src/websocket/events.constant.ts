@@ -11,3 +11,7 @@ export const FEATURE_UPDATE_EVENT = 'feature.updated';
 export const FEATURE_DELETION_EVENT = 'feature.deleted';
 
 export const USER_DISCONNECTED = 'user.disconnected';
+
+export const COMMENT_CREATION_EVENT = 'comment.created';
+export const COMMENT_UPDATE_EVENT = 'comment.updated';
+export const COMMENT_DELETION_EVENT = 'comment.deleted';

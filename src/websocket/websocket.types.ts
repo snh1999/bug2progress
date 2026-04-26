@@ -65,3 +65,18 @@ export type TProjectUpdatePayload = TUpdatePayload & {
 };
 
 export type TProjectDeletionPayload = TDeletePayload;
+
+export type TCommentCreationPayload = TCreationPayload & {
+  comment: TicketComment;
+  ticketId: string;
+};
+
+export type TCommentUpdatePayload = TUpdatePayload & {
+  comment: TicketComment;
+  ticketId: string;
+};
+
+export type TCommentDeletionPayload = TDeletePayload & {
+  commentId: string;
+  ticketId: string;
+};

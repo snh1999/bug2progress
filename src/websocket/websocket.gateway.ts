@@ -11,6 +11,9 @@ import { SocketAuthService } from './services/websocket-auth.service';
 import { JwtWsGuard } from './services/guard/jwt-ws.guard';
 import {
   AuthenticatedSocket,
+  TCommentCreationPayload,
+  TCommentDeletionPayload,
+  TCommentUpdatePayload,
   TFeatureCreationPayload,
   TFeatureDeletionPayload,
   TFeatureUpdatePayload,
@@ -32,6 +35,9 @@ import {
   FEATURE_UPDATE_EVENT,
   PROJECT_UPDATE_EVENT,
   PROJECT_DELETION_EVENT,
+  COMMENT_CREATION_EVENT,
+  COMMENT_UPDATE_EVENT,
+  COMMENT_DELETION_EVENT,
 } from './events.constant';
 import { WebsocketService } from './services/websocket.service';
 
@@ -159,6 +165,33 @@ export class WebsocketGateway
       payload,
       server: this.server,
       event: PROJECT_DELETION_EVENT,
+    });
+  }
+
+  @OnEvent(COMMENT_CREATION_EVENT)
+  handleCommentCreation(payload: TCommentCreationPayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: COMMENT_CREATION_EVENT,
+    });
+  }
+
+  @OnEvent(COMMENT_UPDATE_EVENT)
+  handleCommentUpdate(payload: TCommentUpdatePayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: COMMENT_UPDATE_EVENT,
+    });
+  }
+
+  @OnEvent(COMMENT_DELETION_EVENT)
+  handleCommentDeletion(payload: TCommentDeletionPayload) {
+    this.socketService.handleEventTrigger({
+      payload,
+      server: this.server,
+      event: COMMENT_DELETION_EVENT,
     });
   }
 }
